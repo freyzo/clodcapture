@@ -1,0 +1,242 @@
+{
+  "_meta": {
+    "file": "Chrome Extension Config.json",
+    "purpose": "Template for Chrome Web Store submission. Fill all fields before submitting. Blank = required unless marked optional.",
+    "version": "1.0.0",
+    "based_on": "Spoonfeeder + Clodcapture CWS submissions"
+  },
+
+  "extension": {
+    "name": "",
+    "version": "",
+    "manifest_version": 3,
+    "description_short": "",
+    "_description_short_note": "Shown in Chrome toolbar tooltip. Max 132 chars.",
+    "permissions": [],
+    "_permissions_note": "e.g. storage, scripting, tabs, clipboardWrite, clipboardRead",
+    "host_permissions": [],
+    "icons": {
+      "16": "icons/16.png",
+      "48": "icons/48.png",
+      "128": "icons/128.png"
+    }
+  },
+
+  "cws_developer_account": {
+    "google_account": "",
+    "publisher_display_name": "",
+    "contact_email": "",
+    "address": "",
+    "trader_status": "Non-trader",
+    "developer_console_url": "https://chrome.google.com/webstore/devconsole"
+  },
+
+  "cws_package": {
+    "extension_id": "",
+    "store_url": "",
+    "current_published_version": "",
+    "draft_version": "",
+    "item_type": "Extension",
+    "verified_crx_uploads": false
+  },
+
+  "cws_store_listing": {
+    "product_details": {
+      "title": "",
+      "_title_note": "Auto-filled from manifest. Editable here.",
+      "summary": "",
+      "_summary_note": "Max 132 chars. Must be specific and descriptive. Avoid 'Productivity assistant.' style vagueness.",
+      "description": "",
+      "_description_note": "200+ chars required to avoid Yellow Zinc rejection. Must explain: what it does, features, who it's for, how it helps.",
+      "category": "",
+      "_category_options": ["Developer Tools", "Productivity", "Shopping", "Social & Communication", "Entertainment", "News & Weather", "Education"],
+      "language": "English (United States)"
+    },
+    "graphic_assets": {
+      "store_icon": {
+        "required": true,
+        "size": "128x128 px",
+        "format": "PNG",
+        "path": ""
+      },
+      "global_promo_video": {
+        "required": false,
+        "format": "YouTube URL",
+        "url": ""
+      },
+      "screenshots": {
+        "required": true,
+        "min_count": 2,
+        "max_count": 5,
+        "sizes": ["1280x800 px", "640x400 px"],
+        "format": "JPEG or 24-bit PNG (no alpha)",
+        "paths": []
+      },
+      "small_promo_tile": {
+        "required": false,
+        "recommended": true,
+        "size": "440x280 px",
+        "format": "JPEG or 24-bit PNG (no alpha)",
+        "path": ""
+      },
+      "marquee_promo_tile": {
+        "required": false,
+        "size": "1400x560 px",
+        "format": "JPEG or 24-bit PNG (no alpha)",
+        "path": ""
+      }
+    },
+    "additional_fields": {
+      "official_url": "",
+      "_official_url_note": "Optional. Domain must be verified via Google Search Console.",
+      "homepage_url": "",
+      "support_url": "",
+      "mature_content": false
+    },
+    "item_support": {
+      "visibility": "Public",
+      "_visibility_options": ["Public", "Unlisted", "Private"]
+    }
+  },
+
+  "cws_privacy": {
+    "single_purpose": "",
+    "_single_purpose_note": "One sentence. Must be narrow and easy to understand.",
+    "permission_justifications": {
+      "storage": "",
+      "scripting": "",
+      "tabs": "",
+      "activeTab": "",
+      "clipboardWrite": "",
+      "clipboardRead": "",
+      "host_permissions": "",
+      "_note": "Add/remove entries to match actual permissions requested."
+    },
+    "uses_remote_code": false,
+    "remote_code_justification": "",
+    "data_collection": {
+      "personally_identifiable_information": false,
+      "health_information": false,
+      "financial_and_payment_information": false,
+      "authentication_information": false,
+      "personal_communications": false,
+      "location": false,
+      "web_history": false,
+      "user_activity": false,
+      "website_content": false
+    },
+    "privacy_certifications": {
+      "not_sold_to_third_parties": true,
+      "not_used_for_unrelated_purposes": true,
+      "not_used_for_creditworthiness": true
+    },
+    "privacy_policy_url": "",
+    "_privacy_policy_url_note": "REQUIRED if any data collection box is checked. Strongly recommended regardless."
+  },
+
+  "cws_distribution": {
+    "payment_model": "Free of charge",
+    "_payment_options": ["Free of charge", "Contains in-app purchases"],
+    "visibility": "Public",
+    "_visibility_options": ["Public", "Unlisted", "Private"],
+    "private_group": "",
+    "_private_group_note": "Google Group URL. Only required if Visibility = Private.",
+    "regions": "All regions"
+  },
+
+  "cws_test_instructions": {
+    "credentials": {
+      "username": "",
+      "password": ""
+    },
+    "additional_instructions": "",
+    "_instructions_note": "Step-by-step for reviewer. e.g. Install > navigate to X > open popup > click Y > observe Z."
+  },
+
+  "submission_checklist": {
+    "package": [
+      "[ ] No emojis in JS/HTML files",
+      "[ ] No // or /* */ comments in JS files",
+      "[ ] No debug/dev-only flags (DEBUG_MODE = false)",
+      "[ ] No dead files in zip (remove assets not referenced by manifest)",
+      "[ ] Version in manifest matches intended draft version",
+      "[ ] All icon files present: icons/16.png, icons/48.png, icons/128.png",
+      "[ ] Zip built from clean copy — not dev folder with node_modules etc."
+    ],
+    "store_listing": [
+      "[ ] Title set",
+      "[ ] Summary 132 chars or fewer, specific (not generic)",
+      "[ ] Description 200+ chars, explains features + audience",
+      "[ ] Category selected",
+      "[ ] Store icon 128x128 uploaded",
+      "[ ] Minimum 2 screenshots uploaded",
+      "[ ] Homepage URL set",
+      "[ ] Support URL set"
+    ],
+    "privacy": [
+      "[ ] Single purpose filled",
+      "[ ] Justification filled for every permission requested",
+      "[ ] Remote code: No (unless justified)",
+      "[ ] All data collection boxes accurate",
+      "[ ] All three certifications checked",
+      "[ ] Privacy policy URL filled"
+    ],
+    "distribution": [
+      "[ ] Payment model selected",
+      "[ ] Visibility selected",
+      "[ ] Region distribution confirmed"
+    ]
+  },
+
+  "language_guidelines": {
+    "avoid": {
+      "inject": "use: load, initialize, insert",
+      "injection": "use: loading, initialization",
+      "monitor": "use: manage, track",
+      "daemon": "use: background service",
+      "scrape": "use: read, capture",
+      "spy": "omit entirely",
+      "hack": "omit entirely",
+      "corporate jargon": "omit internal system names visible to public reviewers"
+    }
+  },
+
+  "rejection_history": [],
+  "_rejection_entry_shape": {
+    "version": "",
+    "submitted": "YYYY-MM-DD",
+    "rejected": "YYYY-MM-DD",
+    "violation_id": "",
+    "violation_name": "",
+    "root_cause": "",
+    "fix_applied": ""
+  },
+
+  "known_violation_ids": {
+    "Yellow Zinc": "Missing or insufficient metadata — description too short or vague",
+    "Blue Argon": "Policy violation in extension functionality",
+    "Purple Potassium": "Deceptive or misleading behavior",
+    "Red Nickel": "Malware / dangerous code",
+    "policy_reference": "https://developer.chrome.com/docs/webstore/troubleshooting/"
+  },
+
+  "build_workflow": {
+    "source_folder": "",
+    "build_folder": "extension-cws/v{VERSION}/ (gitignored, delete after submission)",
+    "zip_command": "zip -r {name}-v{VERSION}.zip manifest.json background.js content.js popup.html popup.js icons/",
+    "steps": [
+      "1. Copy source files to build folder",
+      "2. Strip all comments from JS files",
+      "3. Strip all emojis from JS/HTML files",
+      "4. Set DEBUG_MODE = false in all files",
+      "5. Verify version in manifest.json matches intended version",
+      "6. Remove any files not referenced in manifest",
+      "7. Run pre-submission checklist",
+      "8. Zip from inside build folder (not from parent)",
+      "9. Upload to CWS devconsole",
+      "10. Fill Store Listing, Privacy, Distribution tabs",
+      "11. Submit for review",
+      "12. Delete build folder"
+    ]
+  }
+}

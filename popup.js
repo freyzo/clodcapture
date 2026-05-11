@@ -1,0 +1,429 @@
+var $ = function(id) { return document.getElementById(id); };
+var send = function(type, data) { return new Promise(function(r) { chrome.runtime.sendMessage(Object.assign({type:type}, data||{}), r); }); };
+
+var ICO = {
+  copy:     '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="1" width="7" height="10" rx="1.5"/><path d="M4.5 4H2.5A1.5 1.5 0 0 0 1 5.5v7A1.5 1.5 0 0 0 2.5 14h5A1.5 1.5 0 0 0 9 12.5V11"/></svg>',
+  grab:     '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="1" x2="7" y2="9"/><polyline points="4,6 7,9 10,6"/><line x1="2" y1="12" x2="12" y2="12"/></svg>',
+  sync:     '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7a5 5 0 0 1 9-3"/><path d="M12 7a5 5 0 0 1-9 3"/><polyline points="11,1 11,4 8,4"/><polyline points="3,10 3,13 6,13"/></svg>',
+  load:     '<svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="10" height="5" rx="1.5"/><polyline points="4,5 7,2 10,5"/><line x1="7" y1="2" x2="7" y2="7"/></svg>',
+  dl:       '<svg viewBox="0 0 14 14"><line x1="7" y1="1" x2="7" y2="9"/><polyline points="4,6 7,9 10,6"/><line x1="2" y1="12" x2="12" y2="12"/></svg>',
+  x:        '<svg viewBox="0 0 14 14"><line x1="3" y1="3" x2="11" y2="11"/><line x1="11" y1="3" x2="3" y2="11"/></svg>',
+  check:    '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,7 5.5,10.5 12,4"/></svg>',
+  clipboard:'<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="1" width="7" height="10" rx="1.5"/><path d="M4.5 4H2.5A1.5 1.5 0 0 0 1 5.5v7A1.5 1.5 0 0 0 2.5 14h5A1.5 1.5 0 0 0 9 12.5V11"/></svg>',
+  brain:    '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 2.5C5 1.7 5.7 1 6.5 1S8 1.7 8 2.5"/><path d="M2.5 5C1.7 5 1 5.7 1 6.5S1.7 8 2.5 8"/><path d="M11.5 5C12.3 5 13 5.7 13 6.5S12.3 8 11.5 8"/><path d="M5 11.5C5 12.3 5.7 13 6.5 13S8 12.3 8 11.5"/><path d="M5 2.5C3.6 2.5 2.5 3.6 2.5 5v3.5C2.5 10.4 3.6 11.5 5 11.5h4c1.4 0 2.5-1.1 2.5-2.5V5C11.5 3.6 10.4 2.5 9 2.5H5z"/><line x1="7" y1="5" x2="7" y2="9"/><line x1="5" y1="7" x2="9" y2="7"/></svg>',
+  file:     '<svg width="11" height="13" viewBox="0 0 11 13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 1h5.5l2.5 2.5V12a.5.5 0 0 1-.5.5H1.5A.5.5 0 0 1 1 12V1.5A.5.5 0 0 1 1.5 1z"/><path d="M7 1v3h2.5"/><line x1="3" y1="6.5" x2="8" y2="6.5"/><line x1="3" y1="9" x2="6" y2="9"/></svg>',
+};
+
+function iconWrap(svg) { return '<span class="icon">' + svg + '</span>'; }
+function btnLabel(ico, label) { return iconWrap(ico) + '<span>' + label + '</span>'; }
+
+// Dashed progress bar
+var SEGS = 36, SEG_W = 4, SEG_GAP = 2.5, BAR_H = 10;
+function dashedBarSVG(pct) {
+  var filled = Math.round(SEGS * Math.min(Math.max(pct, 0), 1));
+  var totalW = SEGS * (SEG_W + SEG_GAP) - SEG_GAP;
+  var cy = BAR_H / 2, lines = '';
+  for (var i = 0; i < SEGS; i++) {
+    var x = i * (SEG_W + SEG_GAP) + SEG_W / 2;
+    var h = BAR_H * (0.35 + 0.65 * (i / (SEGS - 1)));
+    var c = i < filled ? '#D97757' : 'rgba(0,0,0,0.13)';
+    lines += '<line x1="'+x+'" y1="'+(cy-h/2).toFixed(2)+'" x2="'+x+'" y2="'+(cy+h/2).toFixed(2)+'" stroke="'+c+'" stroke-width="'+SEG_W+'" stroke-linecap="round"/>';
+  }
+  return '<svg width="'+totalW.toFixed(1)+'" height="'+BAR_H+'" viewBox="0 0 '+totalW.toFixed(1)+' '+BAR_H+'" style="display:block;overflow:visible">'+lines+'</svg>';
+}
+
+function startProgress(btn, label) {
+  var pct = 0.12, timer = null;
+  btn.disabled = true;
+  function render() { btn.innerHTML = '<span class="prog-wrap">' + dashedBarSVG(pct) + label + '</span>'; }
+  function tick() { pct += (0.88 - pct) * 0.06; render(); timer = setTimeout(tick, 50); }
+  render(); timer = setTimeout(tick, 50);
+  return function complete(html) {
+    clearTimeout(timer); pct = 1; render();
+    setTimeout(function() { btn.innerHTML = html; btn.disabled = false; }, 280);
+  };
+}
+
+function ago(iso) {
+  if (!iso) return 'never';
+  var m = Math.floor((Date.now() - new Date(iso)) / 60000);
+  if (m < 1) return 'now';
+  if (m < 60) return m + 'm';
+  var h = Math.floor(m / 60);
+  return h < 24 ? h + 'h' : Math.floor(h / 24) + 'd';
+}
+
+function fmtSize(bytes) {
+  if (!bytes) return '';
+  if (bytes < 1048576) return (bytes / 1024).toFixed(0) + ' KB';
+  return (bytes / 1048576).toFixed(1) + ' MB';
+}
+
+// clawd-continue
+var CLAWD_SYSTEM = 'You are receiving a prior session export (JSON). Apply the clawd-continue intelligence protocol.\n\nProduce an intelligence report, not a message-by-message recap. Infer intent, context, arc, and state.\n\nENTITY EXTRACTION:\n- User: identity, role, situation, expertise signals\n- What was built/planned/decided/debugged (name it precisely)\n- External pressures: deadlines, dependencies\n- Tools used, files produced\n\nARC MAPPING: identify phase transitions. For each: goal | trigger | output | end state.\n\nOUTPUT FORMAT:\n**Who:** [1-2 sentences]\n**What was built/decided:** [1 sentence]\n---\n**Timeline:**\n[PHASE NAME]\n[2-5 sentences dense narrative.]\n---\n**Context inferred:**\n[Bullet list. Concrete inference + signal.]\n---\n**Current state:** [what exists, what is open]\n**Next step:** [the logical next action]\n\nThen ask the user how they want to proceed.\n\nRules: no message-by-message summary. Narrate events not utterances.';
+
+function fallbackPrompt(json) {
+  return '[clawd-continue] Digest this prior session and produce an intelligence report before we continue.\n\nWho was the user and what was their situation? What was built/decided (name it precisely)? Map the arc in phases (goal -> output -> state). List context inferred but never stated. End with: current state, next step, then ask how to proceed.\n\nRules: no message-by-message recap. Narrate events, not utterances.\n\nSession export:\n' + json;
+}
+
+async function runClawdContinue(json, apiKey) {
+  var resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+    body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1500, system: CLAWD_SYSTEM, messages: [{ role: 'user', content: json }] }),
+  });
+  if (!resp.ok) { var err = await resp.json().catch(function(){return {};}); throw new Error((err.error && err.error.message) || 'API ' + resp.status); }
+  var data = await resp.json();
+  var tb = data.content && data.content.find(function(b){return b.type==='text';});
+  return tb ? tb.text : '';
+}
+
+// Inject into current tab's composer
+async function injectText(text) {
+  var tabs = await chrome.tabs.query({active:true, currentWindow:true});
+  var tab = tabs[0];
+  if (!tab) throw new Error('no active tab');
+  try { await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['content.js'] }); } catch(_){}
+  return new Promise(function(resolve, reject) {
+    chrome.tabs.sendMessage(tab.id, { action: 'load', text: text }, function(resp) {
+      if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
+      else if (!resp || !resp.ok) reject(new Error((resp && resp.error) || 'no response'));
+      else resolve();
+    });
+  });
+}
+
+// Continue: pick a chat, distill it, inject with optional clawd-continue
+async function continueChat(chatId) {
+  var btn = event.target.closest('.chat-btn') || event.target;
+  var distilled = await send('get_distilled', {chatId: chatId});
+  if (!distilled || !distilled.ok) throw new Error(distilled ? distilled.error : 'failed');
+  var json = JSON.stringify(distilled.data, null, 2);
+
+  var apiKey = (await chrome.storage.local.get('apiKey')).apiKey;
+  var text;
+
+  if (apiKey) {
+    setStatus('Digesting via clawd-continue...', 'ok');
+    try {
+      var report = await runClawdContinue(json, apiKey);
+      text = report + '\n\n---\n*Session digest generated by clawd-continue.*';
+    } catch(e) {
+      setStatus('API error: ' + e.message, 'err');
+      return;
+    }
+  } else {
+    text = fallbackPrompt(json);
+  }
+
+  setStatus('Loading into composer...', 'ok');
+  try {
+    await injectText(text);
+    setStatus('Loaded!', 'ok');
+  } catch(_) {
+    await navigator.clipboard.writeText(text);
+    setStatus('Copied - paste with Cmd+V', 'ok');
+  }
+}
+
+function setStatus(msg, cls) {
+  $('status-msg').textContent = msg;
+  if (cls === 'ok') $('status-msg').style.color = '#D97757';
+  else if (cls === 'err') $('status-msg').style.color = '#c03030';
+  else $('status-msg').style.color = '';
+  if (cls) setTimeout(function() { $('status-msg').style.color = ''; }, 4000);
+}
+
+// Button labels
+var BTN_COPY = btnLabel(ICO.copy, 'Copy');
+var BTN_GRAB = btnLabel(ICO.grab, 'Grab');
+var BTN_SYNC = btnLabel(ICO.sync, 'Sync All');
+
+// Render
+async function render() {
+  var chatId = await send('get_tab_chat');
+  if (chatId) send('capture', {chatId: chatId});
+
+  var state = await send('get_state');
+
+  // Current chat
+  $('conv-id').textContent = chatId ? chatId.slice(0, 20) + '...' : 'none (home/new)';
+  $('conv-id').className = 'val' + (chatId ? ' ok' : ' dim');
+
+  // Sync status
+  var syncDot = $('sync-dot');
+  var syncLabel = $('sync-label');
+  if (!state.last_sync) {
+    syncDot.className = 'sync-dot red';
+    syncLabel.textContent = 'never synced';
+  } else {
+    var mins = (Date.now() - new Date(state.last_sync)) / 60000;
+    if (mins > 60) {
+      syncDot.className = 'sync-dot amber';
+      syncLabel.textContent = 'stale - ' + ago(state.last_sync);
+    } else {
+      syncDot.className = 'sync-dot green';
+      syncLabel.textContent = 'synced ' + ago(state.last_sync);
+    }
+  }
+
+  // Connection dot
+  var tabs = await chrome.tabs.query({active:true, currentWindow:true});
+  var onClaude = tabs[0] && tabs[0].url && tabs[0].url.indexOf('https://claude.ai') === 0;
+  $('dot').className = 'dot' + (onClaude ? ' on' : '');
+  if (!$('status-msg').style.color) $('status-msg').textContent = onClaude ? 'connected' : 'not connected';
+
+  // Buttons
+  $('btn-copy').innerHTML = BTN_COPY;
+  $('btn-copy').disabled = !chatId;
+  $('btn-grab').innerHTML = BTN_GRAB;
+  $('btn-grab').disabled = !chatId;
+  $('btn-sync').innerHTML = BTN_SYNC;
+
+  // Size
+  $('foot-size').textContent = fmtSize(state.bytes);
+
+  // Context gauge for current chat
+  if (chatId) {
+    var ctx = await send('get_context_usage', {chatId: chatId});
+    if (ctx && ctx.tokens > 0) {
+      $('ctx-gauge').style.display = 'flex';
+      var pctNum = Math.round(ctx.pct * 100);
+      $('ctx-ring').innerHTML = renderContextRing(ctx.pct);
+      var pctEl = document.createElement('span');
+      pctEl.className = 'ctx-pct';
+      pctEl.textContent = pctNum + '%';
+      $('ctx-ring').appendChild(pctEl);
+      var tokK = ctx.tokens >= 1000 ? (ctx.tokens / 1000).toFixed(1) + 'k' : ctx.tokens;
+      $('ctx-tokens').textContent = tokK + ' / 200k' + (ctx.exact ? '' : ' (est.)');
+    } else {
+      $('ctx-gauge').style.display = 'none';
+    }
+  } else {
+    $('ctx-gauge').style.display = 'none';
+  }
+
+  // Chat list
+  var idx = await send('get_index');
+  var rows = Object.entries(idx).sort(function(a,b) { return new Date(b[1].captured_at) - new Date(a[1].captured_at); });
+  $('list-count').textContent = rows.length;
+
+  if (!rows.length) {
+    $('chat-list').innerHTML = '<div class="empty-list">Visit a chat to start capturing</div>';
+    return;
+  }
+
+  $('chat-list').innerHTML = rows.map(function(entry) {
+    var id = entry[0], v = entry[1];
+    var name = (v.name||'Untitled').replace(/"/g,'&quot;');
+    return '<div class="chat-item">' +
+      '<div class="chat-info">' +
+        '<div class="chat-name" title="' + name + '">' + (v.name||'Untitled') + '</div>' +
+        '<div class="chat-meta"><span>' + (v.message_count||0) + ' msgs</span><span>' + ago(v.captured_at) + '</span></div>' +
+      '</div>' +
+      '<div class="chat-actions">' +
+        '<button class="chat-btn" data-cont="' + id + '" title="Continue in new chat">' + ICO.load + '</button>' +
+        '<button class="chat-btn" data-export="' + id + '" title="Export to Downloads/">' + ICO.dl + '</button>' +
+        '<button class="chat-btn danger" data-remove="' + id + '" title="Remove">' + ICO.x + '</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  // Per-chat inject
+  $('chat-list').querySelectorAll('[data-cont]').forEach(function(b) {
+    b.onclick = async function(e) {
+      e.stopPropagation();
+      try { await continueChat(b.dataset.cont); } catch(err) { setStatus(err.message.slice(0,30), 'err'); }
+    };
+  });
+
+  // Per-chat export
+  $('chat-list').querySelectorAll('[data-export]').forEach(function(b) {
+    b.onclick = async function(e) {
+      e.stopPropagation();
+      var r = await send('export_one', {chatId:b.dataset.export});
+      setStatus(r.status==='exported' ? 'Exported' : (r.error||r.status), r.status==='exported' ? 'ok' : 'err');
+    };
+  });
+
+  // Per-chat remove
+  $('chat-list').querySelectorAll('[data-remove]').forEach(function(b) {
+    b.onclick = function(e) { e.stopPropagation(); send('remove', {chatId:b.dataset.remove}).then(render); };
+  });
+}
+
+// Copy current chat
+$('btn-copy').onclick = async function() {
+  var chatId = await send('get_tab_chat');
+  if (!chatId) return;
+  var btn = $('btn-copy');
+  var done = startProgress(btn, '<span class="prog-label">Capturing</span>');
+  try {
+    await send('capture', {chatId: chatId});
+    var distilled = await send('get_distilled', {chatId: chatId});
+    if (!distilled || !distilled.ok) throw new Error('capture failed');
+    var json = JSON.stringify(distilled.data, null, 2);
+    await navigator.clipboard.writeText(json);
+    done(btnLabel(ICO.check, 'Copied!'));
+  } catch(e) {
+    done(btnLabel(ICO.x, e.message.slice(0,20)));
+  }
+  setTimeout(function() { $('btn-copy').innerHTML = BTN_COPY; }, 2000);
+};
+
+// Grab current chat
+$('btn-grab').onclick = async function() {
+  var chatId = await send('get_tab_chat');
+  if (!chatId) return;
+  var btn = $('btn-grab');
+  var done = startProgress(btn, '<span class="prog-label">Grabbing</span>');
+  try {
+    var r = await send('grab', {chatId: chatId});
+    done(btnLabel(ICO.check, 'Saved!'));
+    setStatus((r.name||'Chat') + ' saved to Downloads/', 'ok');
+  } catch(e) {
+    done(btnLabel(ICO.x, e.message.slice(0,20)));
+  }
+  setTimeout(function() { $('btn-grab').innerHTML = BTN_GRAB; render(); }, 2000);
+};
+
+// Sync all
+$('btn-sync').onclick = async function() {
+  var btn = $('btn-sync');
+  var done = startProgress(btn, '<span class="prog-label">Syncing</span>');
+  try {
+    var r = await send('sync');
+    if (r.error) throw new Error(r.error);
+    done(btnLabel(ICO.check, r.exported + ' exported'));
+    setStatus(r.exported + ' chats exported to Downloads/brainjar/', 'ok');
+  } catch(e) {
+    done(btnLabel(ICO.x, e.message.slice(0,20)));
+  }
+  setTimeout(function() { $('btn-sync').innerHTML = BTN_SYNC; render(); }, 2500);
+};
+
+// Settings
+var settingsOpen = false;
+$('btn-gear').onclick = async function() {
+  settingsOpen = !settingsOpen;
+  $('settings-panel').classList.toggle('open', settingsOpen);
+  $('btn-gear').classList.toggle('active', settingsOpen);
+  if (settingsOpen) {
+    var data = await chrome.storage.local.get(['apiKey', 'ghToken', 'ghRepo', 'ghAutoSync']);
+    if (data.apiKey) {
+      $('api-key-input').value = data.apiKey;
+      $('api-status').textContent = 'Key saved';
+      $('api-status').className = 'api-status ok';
+    }
+    if (data.ghRepo) $('gh-repo-input').value = data.ghRepo;
+    if (data.ghToken) $('gh-token-input').value = data.ghToken;
+    $('gh-auto').checked = !!data.ghAutoSync;
+    if (data.ghRepo && data.ghToken) {
+      $('gh-status').textContent = 'Connected to ' + data.ghRepo;
+      $('gh-status').className = 'api-status ok';
+    }
+  }
+};
+
+$('api-save').onclick = async function() {
+  var key = $('api-key-input').value.trim();
+  if (!key) {
+    await chrome.storage.local.remove('apiKey');
+    $('api-status').textContent = 'Key cleared';
+    $('api-status').className = 'api-status';
+    return;
+  }
+  $('api-status').textContent = 'Verifying...';
+  $('api-status').className = 'api-status';
+  try {
+    var r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 1, messages: [{ role: 'user', content: 'hi' }] }),
+    });
+    if (r.status === 401) throw new Error('invalid key');
+    await chrome.storage.local.set({ apiKey: key });
+    $('api-status').textContent = 'Key saved - clawd-continue enabled';
+    $('api-status').className = 'api-status ok';
+  } catch(e) {
+    $('api-status').textContent = e.message.indexOf('invalid') >= 0 ? 'Invalid key' : 'Save failed';
+    $('api-status').className = 'api-status err';
+  }
+};
+
+// Context gauge - dashed ring matching progress bar DNA
+function renderContextRing(pct) {
+  var r = 13, cx = 16, cy = 16, segs = 24;
+  var circumference = 2 * Math.PI * r;
+  var segLen = circumference / segs;
+  var gapLen = segLen * 0.35;
+  var dashLen = segLen - gapLen;
+  var filled = Math.round(segs * Math.min(Math.max(pct, 0), 1));
+
+  // background track
+  var bg = '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="rgba(0,0,0,0.08)" stroke-width="3.5"' +
+    ' stroke-dasharray="'+dashLen+' '+gapLen+'" stroke-linecap="round"/>';
+
+  // colored fill
+  var color = pct < 0.5 ? '#D97757' : pct < 0.8 ? '#d97706' : '#ef4444';
+  var fillLen = filled * segLen;
+  var fg = '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="'+color+'" stroke-width="3.5"' +
+    ' stroke-dasharray="'+dashLen+' '+gapLen+'" stroke-linecap="round"' +
+    ' stroke-dashoffset="0"' +
+    ' style="clip-path:inset(0 '+ (100 - pct*100).toFixed(1) +'% 0 0);"' +
+    ' opacity="0.85"/>';
+
+  // simpler approach: use two circles, the fill one clipped by dashoffset
+  // Actually let me use a cleaner method: overlay a filled arc
+  var fillDash = fillLen + ' ' + (circumference - fillLen);
+  var fg2 = '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="'+color+'" stroke-width="3.5"' +
+    ' stroke-dasharray="'+fillDash+'" stroke-linecap="round" opacity="0.9"/>';
+
+  return '<svg width="32" height="32" viewBox="0 0 32 32">' + bg + fg2 + '</svg>';
+}
+
+// Nuke (hidden, only via console: send('clear'))
+
+// GitHub settings
+$('gh-save').onclick = async function() {
+  var repo = $('gh-repo-input').value.trim();
+  var token = $('gh-token-input').value.trim();
+  if (!repo || !token) {
+    await chrome.storage.local.remove(['ghToken', 'ghRepo', 'ghAutoSync']);
+    $('gh-status').textContent = 'GitHub cleared';
+    $('gh-status').className = 'api-status';
+    return;
+  }
+  $('gh-status').textContent = 'Verifying...';
+  $('gh-status').className = 'api-status';
+  var r = await send('gh_validate', {repo: repo, token: token});
+  if (r.ok) {
+    await chrome.storage.local.set({ ghToken: token, ghRepo: repo, ghAutoSync: $('gh-auto').checked });
+    $('gh-status').textContent = 'Connected to ' + r.name + (r.private ? ' (private)' : '');
+    $('gh-status').className = 'api-status ok';
+  } else {
+    $('gh-status').textContent = r.error === '404' ? 'Repo not found' : (r.error === '401' ? 'Bad token' : r.error);
+    $('gh-status').className = 'api-status err';
+  }
+};
+
+$('gh-auto').onchange = async function() {
+  await chrome.storage.local.set({ ghAutoSync: this.checked });
+};
+
+$('btn-gh-push').onclick = async function() {
+  this.disabled = true;
+  $('gh-status').textContent = 'Pushing...';
+  $('gh-status').className = 'api-status';
+  var r = await send('gh_push_all');
+  if (r.error) {
+    $('gh-status').textContent = r.error;
+    $('gh-status').className = 'api-status err';
+  } else {
+    $('gh-status').textContent = r.pushed + '/' + r.total + ' pushed to GitHub';
+    $('gh-status').className = 'api-status ok';
+  }
+  this.disabled = false;
+};
+
+render();

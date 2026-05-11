@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "clodcapture",
+  "version": "2.0.0",
+  "description": "Save and continue AI chat sessions across conversations",
+  "permissions": ["storage", "unlimitedStorage", "tabs", "alarms", "cookies", "downloads", "clipboardWrite", "clipboardRead", "scripting"],
+  "host_permissions": ["https://claude.ai/*", "https://api.anthropic.com/*", "https://api.github.com/*"],
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [
+    {
+      "matches": ["https://claude.ai/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "clodcapture",
+    "default_icon": { "16": "icons/icon16.png", "48": "icons/icon48.png", "128": "icons/icon128.png" }
+  },
+  "icons": { "16": "icons/icon16.png", "48": "icons/icon48.png", "128": "icons/icon128.png" }
+}
