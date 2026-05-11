@@ -1,0 +1,74 @@
+{
+  "_meta": {
+    "file": "clodcapture-cws-config.json",
+    "purpose": "Pre-filled Chrome Web Store submission config for clodcapture v2.0.0",
+    "based_on": "Chrome Extension Config.json template"
+  },
+
+  "cws_store_listing": {
+    "product_details": {
+      "title": "clodcapture",
+      "summary": "Save, export, and continue AI chat sessions across conversations with auto-capture and version history.",
+      "description": "clodcapture automatically captures your AI chat sessions as you browse, storing them locally with unlimited storage. Features include:\n\nAuto-capture: Sessions are saved automatically as you navigate between chats. No manual steps required.\n\nOne-click export: Download any captured session as JSON to your local machine.\n\nSync all: Bulk-export every conversation to your Downloads folder in one click.\n\nContinue sessions: Load a prior session into a new chat composer to pick up where you left off.\n\nGitHub backup: Optionally push captured sessions to a GitHub repository for version-controlled cloud backup with automatic commit diffs.\n\nContext usage gauge: See estimated token usage for the current conversation.\n\nAPI-powered digests: Optionally connect an API key to generate intelligent session summaries before continuing.\n\nAll data stays on your machine in local browser storage. No accounts, no cloud sync, no tracking.",
+      "category": "Productivity",
+      "language": "English (United States)"
+    },
+    "graphic_assets": {
+      "store_icon": "icons/icon128.png",
+      "screenshots": {
+        "_note": "Need 2-5 screenshots at 1280x800 or 640x400. Capture: popup with chat list, settings panel, context gauge, sync in progress."
+      }
+    },
+    "additional_fields": {
+      "homepage_url": "https://github.com/freyzo-labs/brainjar",
+      "support_url": "https://github.com/freyzo-labs/brainjar/issues"
+    }
+  },
+
+  "cws_privacy": {
+    "single_purpose": "Captures and exports AI chat sessions for local backup and cross-session continuity.",
+    "permission_justifications": {
+      "storage": "Stores captured session metadata and user preferences (API key, GitHub config) locally.",
+      "unlimitedStorage": "Sessions can be large (500KB+ each). Unlimited storage ensures no data loss as the capture library grows.",
+      "tabs": "Detects which chat is active to enable auto-capture on navigation and display current session info in the popup.",
+      "alarms": "Runs a background refresh every 30 minutes to keep captured sessions up to date.",
+      "cookies": "Authenticates API requests to the chat platform using existing session cookies. No cookies are read, stored, or transmitted externally.",
+      "downloads": "Exports captured sessions as JSON files to the user's Downloads folder.",
+      "clipboardWrite": "Copies session data to clipboard when direct composer loading is unavailable.",
+      "clipboardRead": "Reads clipboard only during the paste-into-composer flow to verify content was loaded.",
+      "scripting": "Loads the content script into the active tab to enable composer loading and auto-capture on single-page navigation.",
+      "host_permissions_claude_ai": "The extension operates on this specific AI chat platform. Required to read conversation data via the platform's API and to load content into the chat composer.",
+      "host_permissions_api_anthropic": "Optional. Used only when the user configures an API key to generate session digests and exact token counts.",
+      "host_permissions_api_github": "Optional. Used only when the user configures GitHub backup to push captured sessions to their repository."
+    },
+    "uses_remote_code": false,
+    "data_collection": {
+      "personally_identifiable_information": false,
+      "health_information": false,
+      "financial_and_payment_information": false,
+      "authentication_information": false,
+      "personal_communications": false,
+      "location": false,
+      "web_history": false,
+      "user_activity": false,
+      "website_content": true
+    },
+    "_website_content_note": "The extension reads chat conversation content from the active tab to capture and store it locally. This data never leaves the user's machine unless they explicitly configure GitHub backup.",
+    "privacy_certifications": {
+      "not_sold_to_third_parties": true,
+      "not_used_for_unrelated_purposes": true,
+      "not_used_for_creditworthiness": true
+    },
+    "privacy_policy_url": "https://freyzo-labs.github.io/brainjar/privacy.html"
+  },
+
+  "cws_distribution": {
+    "payment_model": "Free of charge",
+    "visibility": "Public",
+    "regions": "All regions"
+  },
+
+  "cws_test_instructions": {
+    "additional_instructions": "1. Install the extension.\n2. Navigate to an AI chat session on the supported platform.\n3. Open the extension popup - the current chat ID should appear.\n4. Click 'Copy' to capture and copy the session to clipboard.\n5. Click 'Grab' to download the current session as JSON.\n6. Observe the captured chats list populates automatically.\n7. Click the arrow icon on any captured chat to load it into a new chat composer.\n8. Click 'Sync All' to bulk-export all conversations to Downloads.\n9. Open Settings (gear icon) to configure optional API key and GitHub backup."
+  }
+}
