@@ -1,0 +1,175 @@
+<div style="display:flex; justify-content:center; padding:1rem 0;">
+<canvas id="c" width="512" height="512" style="width:320px; height:320px; cursor:pointer; border-radius:56px;"></canvas>
+</div>
+<p style="text-align:center; font-size:12px; color:var(--color-text-secondary); margin-top:4px;">Click it</p>
+<script>
+var c = document.getElementById('c');
+var ctx = c.getContext('2d');
+var W = 512, H = 512, CX = 256, CY = 246;
+var sx = 0, sy = 0, vx = 0, vy = 0;
+var stiffness = 0.12, damping = 0.82, pulse = 0, pulseDecay = 0.96, running = false;
+
+var radials = [];
+for (var i = 0; i < 10; i++) radials.push((i / 10) * Math.PI * 2 - Math.PI / 2);
+
+var webR = [];
+for (var i = 0; i < 12; i++) webR.push((i / 12) * Math.PI * 2 - Math.PI / 2);
+var rings = [0.92, 0.74, 0.58, 0.42, 0.28];
+
+function drawBg() {
+  var g = ctx.createLinearGradient(0, 0, W, H);
+  g.addColorStop(0, '#3d3548'); g.addColorStop(1, '#2e2838');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  var r = 112;
+  ctx.moveTo(r, 0); ctx.lineTo(W-r, 0); ctx.quadraticCurveTo(W, 0, W, r);
+  ctx.lineTo(W, H-r); ctx.quadraticCurveTo(W, H, W-r, H);
+  ctx.lineTo(r, H); ctx.quadraticCurveTo(0, H, 0, H-r);
+  ctx.lineTo(0, r); ctx.quadraticCurveTo(0, 0, r, 0);
+  ctx.fill();
+}
+
+function drawWeb() {
+  var ox = CX + sx, oy = CY + sy;
+  for (var ri = 0; ri < rings.length; ri++) {
+    var t = rings[ri];
+    var ringPulse = Math.max(0, pulse - (1-t) * 2.5);
+    var alpha = 0.08 + ringPulse * 0.35;
+    ctx.beginPath();
+    for (var j = 0; j <= webR.length; j++) {
+      var a = webR[j % webR.length];
+      var rad = t * 240;
+      var interp = t * 0.3;
+      var px = CX + Math.cos(a) * rad + sx * interp;
+      var py = CY + Math.sin(a) * rad + sy * interp;
+      j === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    if (ringPulse > 0.01) { ctx.strokeStyle = 'rgba(217,119,87,' + (ringPulse*0.5).toFixed(3) + ')'; ctx.lineWidth = 2.5; ctx.stroke(); }
+    ctx.strokeStyle = 'rgba(255,240,230,' + alpha.toFixed(3) + ')'; ctx.lineWidth = 1.2; ctx.stroke();
+  }
+  for (var j = 0; j < webR.length; j++) {
+    var a = webR[j];
+    var nearP = Math.max(0, pulse - 0.2);
+    ctx.beginPath();
+    ctx.moveTo(ox, oy);
+    var ex = CX + Math.cos(a) * 248, ey = CY + Math.sin(a) * 248;
+    ctx.bezierCurveTo(CX + Math.cos(a)*80 + sx*0.6, CY + Math.sin(a)*80 + sy*0.6, CX + Math.cos(a)*160 + sx*0.15, CY + Math.sin(a)*160 + sy*0.15, ex, ey);
+    if (nearP > 0.01) { ctx.strokeStyle = 'rgba(217,119,87,' + (nearP*0.35).toFixed(3) + ')'; ctx.lineWidth = 2.5; ctx.stroke(); }
+    ctx.strokeStyle = 'rgba(255,240,230,' + (0.10 + nearP*0.2).toFixed(3) + ')'; ctx.lineWidth = 1.2; ctx.stroke();
+  }
+  // dots
+  for (var ri = 0; ri < rings.length; ri++) {
+    var t = rings[ri]; var dp = Math.max(0, pulse - (1-t)*2.5);
+    for (var j = 0; j < webR.length; j++) {
+      var px = CX + Math.cos(webR[j]) * t * 240 + sx * t * 0.3;
+      var py = CY + Math.sin(webR[j]) * t * 240 + sy * t * 0.3;
+      ctx.beginPath(); ctx.arc(px, py, 1.5 + dp*2, 0, Math.PI*2);
+      ctx.fillStyle = dp > 0.05 ? 'rgba(217,119,87,' + (0.15+dp*0.4).toFixed(3) + ')' : 'rgba(255,240,230,0.1)';
+      ctx.fill();
+    }
+  }
+}
+
+function drawCreature() {
+  var ox = CX + sx, oy = CY + sy;
+  ctx.save();
+  ctx.translate(ox, oy);
+
+  // 10 legs - long, sharp, spider-like, bottom ones longer and drooping
+  var legs = [
+    {a: -90, len: 105, curve: -8},
+    {a: -54, len: 100, curve: -12},
+    {a: -18, len: 95, curve: -6},
+    {a: 18, len: 95, curve: 6},
+    {a: 54, len: 100, curve: 12},
+    {a: 90, len: 105, curve: 8},
+    {a: 126, len: 115, curve: 18},
+    {a: 155, len: 125, curve: 22},
+    {a: -155, len: 125, curve: -22},
+    {a: -126, len: 115, curve: -18},
+  ];
+
+  for (var i = 0; i < legs.length; i++) {
+    var l = legs[i];
+    var rad = l.a * Math.PI / 180;
+    var tipX = Math.cos(rad) * l.len;
+    var tipY = Math.sin(rad) * l.len;
+    var midX = Math.cos(rad) * l.len * 0.5 + l.curve;
+    var midY = Math.sin(rad) * l.len * 0.5 + Math.abs(l.curve) * 0.3;
+
+    // Each leg: thick at base, sharp point at tip
+    var perpX = -Math.sin(rad);
+    var perpY = Math.cos(rad);
+    var baseW = 9;
+    var midW = 6;
+
+    ctx.beginPath();
+    ctx.moveTo(perpX * baseW, perpY * baseW);
+    ctx.quadraticCurveTo(midX + perpX * midW, midY + perpY * midW, tipX, tipY);
+    ctx.quadraticCurveTo(midX - perpX * midW, midY - perpY * midW, -perpX * baseW, -perpY * baseW);
+    ctx.closePath();
+    ctx.fillStyle = i % 2 === 0 ? 'rgba(217,119,87,0.92)' : 'rgba(217,119,87,0.85)';
+    ctx.fill();
+  }
+
+  // Arachnid body - head (smaller top ellipse) + abdomen (larger bottom bulge)
+  // Head
+  ctx.beginPath();
+  ctx.ellipse(0, -8, 14, 12, 0, 0, Math.PI * 2);
+  ctx.fillStyle = '#D97757';
+  ctx.fill();
+
+  // Abdomen - larger, teardrop pulling down
+  ctx.beginPath();
+  ctx.moveTo(-16, 0);
+  ctx.bezierCurveTo(-18, 12, -14, 28, 0, 34);
+  ctx.bezierCurveTo(14, 28, 18, 12, 16, 0);
+  ctx.bezierCurveTo(14, -4, -14, -4, -16, 0);
+  ctx.fillStyle = '#D97757';
+  ctx.fill();
+
+  // Subtle segment line between head and abdomen
+  ctx.beginPath();
+  ctx.moveTo(-12, -1);
+  ctx.quadraticCurveTo(0, 3, 12, -1);
+  ctx.strokeStyle = 'rgba(30,26,38,0.3)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  drawBg();
+  drawWeb();
+  drawCreature();
+}
+
+function tick() {
+  vx = (vx + (-stiffness * sx)) * damping;
+  vy = (vy + (-stiffness * sy)) * damping;
+  sx += vx; sy += vy;
+  pulse *= pulseDecay;
+  draw();
+  if (Math.abs(sx) > 0.1 || Math.abs(sy) > 0.1 || Math.abs(vx) > 0.05 || pulse > 0.005) {
+    requestAnimationFrame(tick);
+  } else { sx=0; sy=0; vx=0; vy=0; pulse=0; draw(); running=false; }
+}
+
+c.addEventListener('click', function(e) {
+  var rect = c.getBoundingClientRect();
+  var scale = W / rect.width;
+  var mx = (e.clientX - rect.left) * scale - CX;
+  var my = (e.clientY - rect.top) * scale - CY;
+  var dist = Math.sqrt(mx*mx + my*my) || 1;
+  var force = 20 + Math.random() * 16;
+  vx += (-mx / dist) * force * (0.6 + Math.random() * 0.8);
+  vy += (-my / dist) * force * (0.6 + Math.random() * 0.8);
+  pulse = 1.0;
+  if (!running) { running = true; tick(); }
+});
+
+draw();
+</script>
