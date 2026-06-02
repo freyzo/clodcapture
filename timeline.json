@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "project": "clodcapture",
+    "repo": "https://github.com/freyzo/clodcapture",
+    "store_id": "mhapejnhlmepeinjmlppoopcoicmgojb",
+    "store_url": "https://chromewebstore.google.com/detail/mhapejnhlmepeinjmlppoopcoicmgojb",
+    "privacy_url": "https://clodcapture-privacy.vercel.app/",
+    "project_page": "https://freyazou.com/projects/clodcapture/"
+  },
+  "goal": "Auto-save, export, and continue Claude.ai chat sessions; ship updates via Chrome Web Store",
+  "status": "live — store v2.2.0 matches local manifest",
+  "last_updated": "2026-06-02T21:24:20Z",
+  "entries": [
+    {
+      "id": "b34c331a-4a4f-4688-a6ce-2f6f92c87c85",
+      "ts": "2026-06-02T21:24:20Z",
+      "type": "start",
+      "content": "Created timeline.json template for clodcapture project memory",
+      "context": {
+        "operation": "timeline-init",
+        "schema": "append-only entries[] with id, ts, type, content, optional context"
+      }
+    },
+    {
+      "id": "50f90f72-cf82-4ebe-ab33-a96f72d2eb3c",
+      "ts": "2026-05-13T00:00:00Z",
+      "type": "milestone",
+      "content": "Chrome Web Store live release v2.2.0",
+      "note": "Baseline from store listing at timeline creation",
+      "context": {
+        "source": "chromewebstore",
+        "store_url": "https://chromewebstore.google.com/detail/mhapejnhlmepeinjmlppoopcoicmgojb",
+        "version": "2.2.0",
+        "store_updated": "2026-05-13",
+        "size_kib": 42.83,
+        "rating": 5.0,
+        "rating_count": 4,
+        "users": 4,
+        "category": "Developer Tools",
+        "developer_email": "freyazou2026@gmail.com",
+        "store_description": "Save, export, and continue AI chat sessions across conversations with auto-capture and version history",
+        "local_manifest_version": "2.2.0",
+        "in_sync": true
+      }
+    },
+    {
+      "id": "0bb0698d-5955-4c4d-ac8e-54a7e7c5067d",
+      "ts": "2026-06-02T21:24:20Z",
+      "type": "note",
+      "content": "Local repo baseline: MV3 extension, vanilla JS, ~570 lines, no npm build",
+      "context": {
+        "manifest_version": 3,
+        "core_files": ["background.js", "content.js", "popup.js", "popup.html", "spider.js"],
+        "features": [
+          "auto-capture on claude.ai navigation",
+          "IndexedDB brainjar storage",
+          "export copy/grab/sync-all/github-push",
+          "clawd-continue intelligence report",
+          "context usage gauge with optional API key"
+        ],
+        "accent_color": "#D97757",
+        "git_branch": "main",
+        "git_status": "clean, up to date with origin/main"
+      }
+    },
+    {
+      "id": "c6af644a-c142-4ac3-a08f-91258a5812e8",
+      "ts": "2026-06-02T21:24:20Z",
+      "type": "note",
+      "content": "Chrome store assets live under chrome-store/assets/ (icons, demo GIF, promo tiles, marquee)",
+      "context": {
+        "paths": [
+          "chrome-store/assets/cws-store-icon-128.png",
+          "chrome-store/assets/cws-promo-440x280.png",
+          "chrome-store/assets/clodcapture-marquee-1400x560.png",
+          "chrome-store/assets/demo.gif",
+          "chrome-store/assets/spider_icon.svg"
+        ],
+        "config": "chrome-store/clodcapture-config.json"
+      }
+    }
+  ],
+  "decisions": [],
+  "blockers": [],
+  "learnings": []
+}
