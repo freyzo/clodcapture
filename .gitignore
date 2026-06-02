@@ -8,9 +8,8 @@ node_modules/
 .env
 .env.*
 
-# Chrome Web Store build output (see chrome-store config: extension-cws/)
-extension-cws/
-*.zip
+# Chrome Web Store build zips (keep latest in chrome-store/ if needed)
+chrome-store/*.zip
 
 # Extension signing keys
 *.pem

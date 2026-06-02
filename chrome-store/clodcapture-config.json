@@ -1,7 +1,7 @@
 {
   "_meta": {
     "file": "clodcapture-cws-config.json",
-    "purpose": "Pre-filled Chrome Web Store submission config for clodcapture v2.0.0",
+    "purpose": "Pre-filled Chrome Web Store submission config for clodcapture v2.2.0",
     "based_on": "Chrome Extension Config.json template"
   },
 
@@ -20,8 +20,8 @@
       }
     },
     "additional_fields": {
-      "homepage_url": "https://github.com/freyzo-labs/brainjar",
-      "support_url": "https://github.com/freyzo-labs/brainjar/issues"
+      "homepage_url": "https://github.com/freyzo/clodcapture",
+      "support_url": "https://github.com/freyzo/clodcapture/issues"
     }
   },
 
@@ -59,7 +59,7 @@
       "not_used_for_unrelated_purposes": true,
       "not_used_for_creditworthiness": true
     },
-    "privacy_policy_url": "https://freyzo-labs.github.io/brainjar/privacy.html"
+    "privacy_policy_url": "https://clodcapture-privacy.vercel.app/"
   },
 
   "cws_distribution": {

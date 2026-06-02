@@ -17,15 +17,11 @@ Paths are under `chrome-store/assets/`:
 
 | File | Use |
 |------|-----|
-| [`cws-store-icon-128.png`](chrome-store/assets/cws-store-icon-128.png) | Store listing icon (128×128) |
-| [`icon128.png`](chrome-store/assets/icon128.png) | Alternate 128 icon |
-| [`cws-promo-440x280.png`](chrome-store/assets/cws-promo-440x280.png) | Small promo tile (440×280) |
-| [`clodcapture-marquee-1400x560.png`](chrome-store/assets/clodcapture-marquee-1400x560.png) | Marquee (1400×560) |
-| [`clodcapture-no-projectname.gif`](chrome-store/assets/clodcapture-no-projectname.gif) | Demo GIF |
-| [`clodcapture-project-name.gif`](chrome-store/assets/clodcapture-project-name.gif) | Demo GIF (with project name) |
-| [`clodcapture.mov`](chrome-store/assets/clodcapture.mov) | Screen recording |
-
-Preview the store tile and marquee in GitHub’s file viewer or open the GIFs locally.
+| [`cws-store-icon-128.png`](chrome-store/assets/cws-store-icon-128.png) | Store listing icon (128x128) |
+| [`cws-promo-440x280.png`](chrome-store/assets/cws-promo-440x280.png) | Small promo tile (440x280) |
+| [`clodcapture-marquee-1400x560.png`](chrome-store/assets/clodcapture-marquee-1400x560.png) | Marquee (1400x560) |
+| [`demo.gif`](chrome-store/assets/demo.gif) | Demo GIF |
+| [`spider_icon.svg`](chrome-store/assets/spider_icon.svg) | Spider icon source |
 
 ## The problem
 
@@ -68,7 +64,7 @@ Resume a saved thread in a **new** chat:
 - **Without:** Estimate `chars / 3.5`.
 - Shown as a dashed ring in the popup.
 
-## Architecture (~1160 lines, zero dependencies)
+## Architecture (~570 lines, zero dependencies)
 
 ```
 manifest.json          MV3, service_worker, content_scripts on claude.ai
@@ -77,9 +73,8 @@ manifest.json          MV3, service_worker, content_scripts on claude.ai
   |                     GitHub push, token count, alarms
   +-- content.js       History patching, capture triggers, composer injection
   +-- popup.js         UI, handlers, settings, lists, progress
-  +-- popup.html       Layout + styles (glass UI, DM Sans)
+  +-- popup.html       Layout + styles (glass UI)
   +-- spider.js        Header canvas spider (click = bounce)
-  +-- intercept.js     Token relay from page (MAIN world)
 ```
 
 ## Permissions
@@ -108,7 +103,7 @@ manifest.json          MV3, service_worker, content_scripts on claude.ai
 2. Chrome → **Extensions** → turn on **Developer mode** → **Load unpacked** → choose the repo folder (the one that contains `manifest.json`).
 3. Open https://claude.ai and use the extension popup as usual.
 
-Current release in `manifest.json`: **2.0.0**. Store listing may show “pending review” after updates; check the Web Store link for live status.
+Current release in `manifest.json`: **2.2.0**. Store listing may show “pending review” after updates; check the Web Store link for live status.
 
 ## License / compliance
 
