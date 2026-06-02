@@ -1,27 +1,19 @@
 <p align="center">
-  <img src="icons/icon128.png" alt="clodcapture" width="96" />
+  <img src="assets/cws-store-icon-128.png" alt="clodcapture icon" width="128" />
 </p>
 
 <h1 align="center">clodcapture</h1>
 
 <p align="center">
-  <em>Auto-save, export, and continue Claude.ai chat sessions</em><br/>
-  <em>Background capture, local storage, version history</em>
+  <em>Auto-save, export, and continue Claude.ai chat sessions across conversations</em><br />
+  <em>Zero dependencies, zero accounts, all data stays local</em>
 </p>
 
 <p align="center">
-  <a href="https://chromewebstore.google.com/detail/mhapejnhlmepeinjmlppoopcoicmgojb">Chrome Web Store</a>
-  ·
-  <a href="https://clodcapture-privacy.vercel.app/">Privacy</a>
-  ·
-  <a href="https://freyazou.com/projects/clodcapture/">Project page</a>
+  <a href="https://chromewebstore.google.com/detail/mhapejnhlmepeinjmlppoopcoicmgojb"><img src="https://img.shields.io/badge/Chrome_Web_Store-clodcapture-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Chrome Web Store" /></a>
+  <a href="https://github.com/freyzo/clodcapture"><img src="https://img.shields.io/badge/source-000000?style=for-the-badge&logo=github&logoColor=white" alt="GitHub" /></a>
+  <a href="https://clodcapture-privacy.vercel.app/"><img src="https://img.shields.io/badge/privacy-222222?style=for-the-badge&logo=shieldsdotio&logoColor=white" alt="Privacy" /></a>
 </p>
-
-**Install from the Chrome Web Store** (recommended):
-
-[clodcapture on Chrome Web Store](https://chromewebstore.google.com/detail/mhapejnhlmepeinjmlppoopcoicmgojb)
-
-Current live version: **2.2.0**. After you submit an update, the listing may show “pending review” for a while.
 
 ---
 
@@ -29,99 +21,45 @@ Current live version: **2.2.0**. After you submit an update, the listing may sho
 
 **Problem**
 
-- Claude.ai has no full session export — long threads are hard to keep when context fills up.
-- Manual copy-paste is slow and you lose structure (roles, metadata, ordering).
-- You want chats **saved locally** while you work, with a way to **export** or **continue** in a new conversation later.
+- Claude.ai has no full session export. When context fills up, long threads are hard to keep.
+- Manual copy-paste loses structure, and there's no way to resume a prior conversation in a new chat without friction.
+- You can't see how much context you've used until it's too late.
 
 **Solution**
 
-- **`clodcapture`** is a Chrome extension that runs on **claude.ai**:
-  - **Auto-capture** when you switch chats (uses your existing site session — no API key required to save).
-  - **Local storage** — full JSON in IndexedDB; fast list metadata in extension storage.
-  - **Export** — copy distilled JSON, download raw API JSON, sync all to disk, or push to GitHub.
-  - **clawd-continue** — resume a saved thread in a new chat via an intelligence report (with optional API key).
-- Optional **Anthropic API key** for token counting and smarter continue prompts. Capture itself uses cookies only.
+- **clodcapture** runs while you use claude.ai. No separate login, no setup.
+- Captures full conversation JSON automatically as you navigate between chats.
+- One-click export, bulk sync, GitHub backup, and session continuation in new chats.
 
 **Summary**
 
-| You want | Where / how |
+| You want | How |
 | --- | --- |
-| Install (users) | [Chrome Web Store](https://chromewebstore.google.com/detail/mhapejnhlmepeinjmlppoopcoicmgojb) |
-| Auto-save while chatting | Open claude.ai — extension captures on navigation |
-| See saved chats | Extension popup list |
-| Copy distilled JSON | Popup → **Copy** |
-| Download raw capture | Popup → **Grab** |
-| Export everything | Popup → **Sync All** → `Downloads/clodcapture/` |
-| Backup to GitHub | Configure repo in settings → **GitHub Push** |
-| Continue in new chat | Popup → **clawd-continue** |
-| Context usage gauge | Popup ring (API key = exact tokens; else char estimate) |
-
-> Requires **Chrome** (Manifest V3) and an active **claude.ai** session.
+| Auto-capture a chat | Just visit it - clodcapture captures on navigation |
+| Copy session to clipboard | Click **Copy** in popup |
+| Download raw JSON | Click **Grab** |
+| Export everything | Click **Sync All** - zips to `Downloads/clodcapture/` |
+| Resume in a new chat | Click the continue button on any captured chat |
+| Push to GitHub | Configure repo in Settings, click **Push All** |
+| See context usage | Check the gauge in the popup footer |
 
 ---
+
+## UI
+
+<p align="center">
+  <img src="assets/extension-UI/clodcapture-ui.png" alt="clodcapture popup UI" width="360" />
+</p>
 
 ## Install
 
-1. Open the [Chrome Web Store listing](https://chromewebstore.google.com/detail/mhapejnhlmepeinjmlppoopcoicmgojb).
-2. Click **Add to Chrome**.
-3. Open https://claude.ai and click the extension icon.
+[Download from Chrome Web Store](https://chromewebstore.google.com/detail/mhapejnhlmepeinjmlppoopcoicmgojb)
 
----
+### From source
 
-## Usage
-
-### Everyday loop
-
-1. Use Claude normally on **claude.ai** — chats capture in the background when you switch threads.
-2. Open the popup to browse saved sessions, export, or continue.
-3. Background alarm refreshes captures every **30 minutes**.
-
-### Export modes
-
-| Mode | Behavior |
-| --- | --- |
-| **Copy** | Distills to `{ title, messages[] }` JSON → clipboard |
-| **Grab** | Downloads raw API JSON (timestamped filename) |
-| **Sync All** | Exports every capture to `Downloads/clodcapture/` |
-| **GitHub Push** | Pushes to configured `owner/repo` (optional auto-push on capture) |
-
-### clawd-continue
-
-Resume a saved thread in a **new** chat:
-
-1. Distills capture to roles + text.
-2. **With API key:** Claude Sonnet builds an **intelligence report** (entities, arc, state, next step) — not a line-by-line replay.
-3. **Without API key:** Fallback prompt embeds session JSON.
-4. Injects into the claude.ai composer via `ClipboardEvent`.
-
-### Context gauge (popup)
-
-- **With API key:** `/v1/messages/count_tokens` vs **200k** window.
-- **Without:** estimate `chars / 3.5`.
-- Shown as a dashed ring in the popup.
-
-### Examples
-
-```text
-# Typical flow
-1. Chat on claude.ai (auto-captured)
-2. Open popup → pick a session → Copy or Grab
-3. New chat → clawd-continue → paste injected prompt
-
-# Bulk export
-Popup → Sync All → check ~/Downloads/clodcapture/
-
-# GitHub backup (after configuring owner/repo in settings)
-Popup → GitHub Push on one chat, or enable auto-push on capture
-```
-
----
-
-## Demo
-
-<p align="center">
-  <img src="chrome-store/assets/demo.gif" alt="clodcapture demo" width="720" />
-</p>
+1. Clone this repo.
+2. Chrome -> **Extensions** -> turn on **Developer mode** -> **Load unpacked** -> choose the repo folder (the one with `manifest.json`).
+3. Open https://claude.ai and use the extension popup.
 
 ---
 
@@ -129,29 +67,33 @@ Popup → GitHub Push on one chat, or enable auto-push on capture
 
 ### Capture pipeline
 
-1. **Content script** patches `history.pushState` / `replaceState` and listens for `popstate`.
-2. Chat switch → message to **service worker** → fetch conversation API with session cookies.
-3. Raw JSON → **IndexedDB** (`brainjar`); metadata → `chrome.storage.local` for the popup list.
-4. **Alarm** every 30 minutes re-syncs open/recent chats.
+1. Content script patches `history.pushState` / `replaceState` and listens for `popstate`. Switching chats triggers a capture via the service worker.
+2. Uses your existing claude.ai session cookies to call the conversation API. No API key required for saving.
+3. Raw JSON stored in **IndexedDB** (`brainjar`). Metadata indexed in `chrome.storage.local` for fast popup rendering.
+4. Background alarm refreshes captures every **30 minutes**.
 
-### Architecture
+### clawd-continue (session resume)
 
-```
-manifest.json          MV3, service_worker, content_scripts on claude.ai
-  |
-  +-- background.js    IndexedDB, auth fetch, capture / sync / export,
-  |                     GitHub push, token count, alarms
-  +-- content.js       History patching, capture triggers, composer injection
-  +-- popup.js         UI, handlers, settings, lists, progress
-  +-- popup.html       Layout + styles (glass UI)
-  +-- spider.js        Header canvas spider (click = bounce)
-```
+Resume a saved thread in a new chat:
 
-### Design
+1. Distills captured JSON to `{ role, text }` pairs.
+2. **With API key:** Claude Sonnet builds an intelligence report (entities, arc, state, next step) - not a line-by-line replay.
+3. **Without API key:** Fallback prompt embeds session JSON directly.
+4. Injects into the claude.ai composer via `ClipboardEvent`.
 
-- Accent **#D97757** (terracotta): progress, badges, gauge, spider, status dots.
-- Dark glass UI, blur, springy easing `cubic-bezier(.34,1.56,.64,1)`.
-- Typography: **DM Sans** (400 / 500 / 700).
+### Context usage gauge
+
+- **With API key:** exact token count via `/v1/messages/count_tokens` against a 200k window.
+- **Without:** estimate via `chars / 3.5`.
+- Shown as a segmented ring in the popup footer.
+
+---
+
+## Architecture
+
+<p align="center">
+  <img src="assets/architecture.png" alt="clodcapture architecture diagram" width="720" />
+</p>
 
 ---
 
@@ -159,34 +101,30 @@ manifest.json          MV3, service_worker, content_scripts on claude.ai
 
 | Permission | Why |
 | --- | --- |
-| `storage`, `unlimitedStorage` | IndexedDB + extension storage |
-| `tabs` | Active claude.ai tab / chat id from URL |
-| `cookies` | Session-backed API calls for capture |
-| `downloads` | JSON exports |
-| `clipboardWrite`, `clipboardRead` | Copy / paste workflows |
-| `scripting` | Inject for composer flows |
-| `alarms` | 30-minute sync |
+| `storage`, `unlimitedStorage` | IndexedDB + extension storage for captured sessions |
+| `tabs` | Detect active claude.ai tab and extract chat ID from URL |
+| `cookies` | Session-backed API calls for capture (no cookies stored or transmitted) |
+| `downloads` | JSON and ZIP exports to Downloads folder |
+| `clipboardWrite`, `clipboardRead` | Copy/paste workflows for session data |
+| `scripting` | Inject content script for composer loading |
+| `alarms` | 30-minute background sync |
 
-**Host permissions:** `claude.ai`, `api.anthropic.com` (counting / continue), `api.github.com` (backup).
-
----
-
-## Privacy
-
-- Data stays **on your machine** unless you export or configure GitHub push.
-- See the [privacy policy](https://clodcapture-privacy.vercel.app/) linked from the store listing.
-- Store listing states data is not sold or used for unrelated purposes.
+**Host permissions:** `claude.ai` (capture), `api.anthropic.com` (optional token counting + continue), `api.github.com` (optional backup).
 
 ---
 
-## Contact
+## Settings
+
+| Setting | What it does |
+| --- | --- |
+| **API key** | Enables exact token counting and AI-powered session digests via clawd-continue |
+| **GitHub repo** | `owner/repo` for backup. Push captured sessions as versioned JSON files |
+| **Auto-push** | Automatically push to GitHub on every capture |
+
+All settings stored locally in `chrome.storage.local`. No data leaves your machine unless you explicitly configure GitHub backup.
+
+---
 
 <p align="center">
-  <a href="https://x.com/freyazou">X @freyazou</a>
-  ·
-  <a href="https://github.com/freyzo">GitHub</a>
-  ·
-  <a href="https://www.linkedin.com/in/freyazou/">LinkedIn</a>
-  ·
-  <a href="https://freyazou.com/">Website</a>
+  <a href="https://freyazou.com">freyazou.com</a> · <a href="https://x.com/freyazou">@freyazou</a> · <a href="https://www.linkedin.com/in/freya-zou-068615252/">LinkedIn</a> · <a href="https://www.youtube.com/channel/UC9pdMpmZ6ZNAakfcZSxaJXQ">YouTube</a>
 </p>
