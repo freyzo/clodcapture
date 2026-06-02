@@ -1,4 +1,5 @@
-const Q="?tree=True&rendering_mode=messages&render_all_tools=true&consistency=eventual";const CHAT_RE=/\/chat\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/;const SYNC_DIR="clodcapture";const DB_NAME="brainjar";const DB_VER=1;function openDB(){return new Promise((res,rej)=>{const r=indexedDB.open(DB_NAME,DB_VER);r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains("chats"))r.result.createObjectStore("chats");};r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});}
+const Q="?tree=True&rendering_mode=messages&render_all_tools=true&consistency=eventual";const CHAT_RE=/\/chat\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/;const SYNC_DIR="clodcapture";const DB_NAME="brainjar";const DB_VER=1;
+let _db=null;function openDB(){if(_db)return Promise.resolve(_db);return new Promise((res,rej)=>{const r=indexedDB.open(DB_NAME,DB_VER);r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains("chats"))r.result.createObjectStore("chats");};r.onsuccess=()=>{_db=r.result;_db.onclose=()=>{_db=null;};res(_db);};r.onerror=()=>rej(r.error);});}
 async function dbPut(k,v){const db=await openDB();return new Promise((res,rej)=>{const tx=db.transaction("chats","readwrite");tx.objectStore("chats").put(v,k);tx.oncomplete=res;tx.onerror=()=>rej(tx.error);});}
 async function dbGet(k){const db=await openDB();return new Promise((res,rej)=>{const tx=db.transaction("chats","readonly");const r=tx.objectStore("chats").get(k);r.onsuccess=()=>res(r.result||null);r.onerror=()=>rej(r.error);});}
 async function dbDelete(k){const db=await openDB();return new Promise((res,rej)=>{const tx=db.transaction("chats","readwrite");tx.objectStore("chats").delete(k);tx.oncomplete=res;tx.onerror=()=>rej(tx.error);});}
@@ -6,16 +7,51 @@ async function dbClear(){const db=await openDB();return new Promise((res,rej)=>{
 async function getCookieHeader(url){const cookies=await chrome.cookies.getAll({url});const now=Date.now()/1000;return cookies.filter(c=>!c.expirationDate||c.expirationDate>now).map(c=>c.name+"="+c.value).join("; ");}
 async function authFetch(url){const cookie=await getCookieHeader(url);const r=await fetch(url,{headers:{"Cookie":cookie}});if(!r.ok)throw new Error(""+r.status);return r;}
 async function api(path){return(await authFetch("https://claude.ai"+path)).json();}
-async function fetchRaw(chatId){const org=await getOrg();return(await authFetch("https://claude.ai/api/organizations/"+org.uuid+"/chat_conversations/"+chatId+Q)).text();}
-async function getOrg(){const c=await chrome.storage.local.get("_org");if(c._org)return c._org;const orgs=await api("/api/organizations");const org=orgs.find(o=>JSON.stringify(o.capabilities||{}).includes("chat"))||orgs[orgs.length-1];const v={uuid:org.uuid,name:org.name};await chrome.storage.local.set({_org:v});return v;}
-async function getIndex(){return(await chrome.storage.local.get("_index"))._index||{};}
+const UUID_RE=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+function validUUID(id){return typeof id==="string"&&UUID_RE.test(id);}
+async function fetchRaw(chatId){if(!validUUID(chatId))throw new Error("invalid_id");const org=await getOrg();return(await authFetch("https://claude.ai/api/organizations/"+org.uuid+"/chat_conversations/"+chatId+Q)).text();}
+async function getOrg(){const c=await chrome.storage.local.get(["_org","_org_ts"]);if(c._org&&c._org_ts&&(Date.now()-c._org_ts<86400000))return c._org;const orgs=await api("/api/organizations");const org=orgs.find(o=>JSON.stringify(o.capabilities||{}).includes("chat"))||orgs[orgs.length-1];const v={uuid:org.uuid,name:org.name};await chrome.storage.local.set({_org:v,_org_ts:Date.now()});return v;}
+let _idxCache=null;
+async function getIndex(){if(_idxCache)return _idxCache;_idxCache=(await chrome.storage.local.get("_index"))._index||{};return _idxCache;}
 async function putIndex(chatId,meta){const idx=await getIndex();idx[chatId]=meta;await chrome.storage.local.set({_index:idx});updateBadge(Object.keys(idx).length);}
 async function removeIndex(chatId){const idx=await getIndex();delete idx[chatId];await chrome.storage.local.set({_index:idx});updateBadge(Object.keys(idx).length);}
 function updateBadge(n){chrome.action.setBadgeText({text:n>0?String(n):""});chrome.action.setBadgeBackgroundColor({color:"#9B78F8"});}
 function slug(s){return(s||"untitled").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,50);}
 async function dl(content,filename,type){const b64=btoa(unescape(encodeURIComponent(content)));return new Promise((res,rej)=>{chrome.downloads.download({url:"data:"+type+";base64,"+b64,filename:filename,saveAs:false,conflictAction:"overwrite"},id=>{chrome.runtime.lastError?rej(new Error(chrome.runtime.lastError.message)):res(id);});});}
+async function dlBlob(blob,filename){const buf=await blob.arrayBuffer();const bytes=new Uint8Array(buf);let bin='';for(let i=0;i<bytes.length;i++)bin+=String.fromCharCode(bytes[i]);const b64=btoa(bin);const url="data:application/zip;base64,"+b64;return new Promise((res,rej)=>{chrome.downloads.download({url:url,filename:filename,saveAs:false,conflictAction:"overwrite"},id=>{chrome.runtime.lastError?rej(new Error(chrome.runtime.lastError.message)):res(id);});});}
+function buildZip(files){/* Minimal ZIP builder for text files (STORE, no compression) */
+function str2buf(s){return new TextEncoder().encode(s);}
+function u16(n){return[n&0xff,(n>>8)&0xff];}
+function u32(n){return[n&0xff,(n>>8)&0xff,(n>>16)&0xff,(n>>24)&0xff];}
+function crc32(buf){let c=0xffffffff;for(let i=0;i<buf.length;i++){c^=buf[i];for(let j=0;j<8;j++)c=(c>>>1)^(c&1?0xedb88320:0);}return(c^0xffffffff)>>>0;}
+const entries=[];let offset=0;const parts=[];
+for(const{name,data}of files){const nameBuf=str2buf(name);const dataBuf=typeof data==="string"?str2buf(data):data;const crc=crc32(dataBuf);const local=new Uint8Array([
+0x50,0x4b,0x03,0x04,0x14,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+...u32(crc),...u32(dataBuf.length),...u32(dataBuf.length),
+...u16(nameBuf.length),0x00,0x00]);
+parts.push(local,nameBuf,dataBuf);
+entries.push({nameBuf,crc,size:dataBuf.length,offset});
+offset+=local.length+nameBuf.length+dataBuf.length;}
+const cdStart=offset;
+for(const e of entries){const cd=new Uint8Array([
+0x50,0x4b,0x01,0x02,0x14,0x00,0x14,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+...u32(e.crc),...u32(e.size),...u32(e.size),
+...u16(e.nameBuf.length),0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+...u32(e.offset)]);
+parts.push(cd,e.nameBuf);
+offset+=cd.length+e.nameBuf.length;}
+const cdSize=offset-cdStart;
+const eocd=new Uint8Array([
+0x50,0x4b,0x05,0x06,0x00,0x00,0x00,0x00,
+...u16(entries.length),...u16(entries.length),
+...u32(cdSize),...u32(cdStart),0x00,0x00]);
+parts.push(eocd);
+let total=0;for(const p of parts)total+=p.length;
+const out=new Uint8Array(total);let pos=0;
+for(const p of parts){out.set(p,pos);pos+=p.length;}
+return new Blob([out],{type:"application/zip"});}
 function distill(raw){const data=typeof raw==="string"?JSON.parse(raw):raw;const msgs=(data.chat_messages||[]).flatMap(msg=>{const role=msg.sender==="human"?"human":"assistant";const text=(msg.content||[]).filter(c=>c.type==="text"&&(c.text||"").trim()).map(c=>c.text.trim()).join("\n\n");return text?[{role,text}]:[];});return{title:data.name||"session",created_at:data.created_at,messages:msgs};}
-async function getGitHubConfig(){const c=await chrome.storage.local.get(["ghToken","ghRepo","ghAutoSync"]);if(!c.ghToken||!c.ghRepo)return null;var parts=c.ghRepo.split("/");if(parts.length!==2)return null;return{token:c.ghToken,owner:parts[0],repo:parts[1],auto:!!c.ghAutoSync};}
+async function getGitHubConfig(){const c=await chrome.storage.local.get(["ghToken","ghRepo","ghAutoSync"]);if(!c.ghToken||!c.ghRepo)return null;var parts=c.ghRepo.split("/");if(parts.length!==2)return null;if(/[^a-zA-Z0-9._-]/.test(parts[0])||/[^a-zA-Z0-9._-]/.test(parts[1]))return null;return{token:c.ghToken,owner:parts[0],repo:parts[1],auto:!!c.ghAutoSync};}
 async function ghPush(chatId,raw,meta){const gh=await getGitHubConfig();if(!gh)return;const path="chats/"+slug(meta.name)+"-"+chatId.slice(0,8)+".json";const b64=btoa(unescape(encodeURIComponent(raw)));const headers={"Authorization":"Bearer "+gh.token,"Content-Type":"application/json","Accept":"application/vnd.github+json"};const url="https://api.github.com/repos/"+gh.owner+"/"+gh.repo+"/contents/"+path;var sha=null;try{var existing=await fetch(url,{headers:headers});if(existing.ok){var data=await existing.json();sha=data.sha;}}catch(e){}
 var body={message:"update "+(meta.name||"chat")+" ("+(meta.message_count||0)+" msgs)",content:b64};if(sha)body.sha=sha;var resp=await fetch(url,{method:"PUT",headers:headers,body:JSON.stringify(body)});if(!resp.ok){var err=await resp.json().catch(function(){return{};});throw new Error((err.message)||"GitHub "+resp.status);}
 return{pushed:true,path:path};}
@@ -25,29 +61,31 @@ await new Promise(r=>setTimeout(r,200));}
 return{pushed:pushed,errors:errors,total:Object.keys(idx).length};}
 async function capture(chatId,force){const idx=await getIndex();if(!force&&idx[chatId]){const age=Date.now()-new Date(idx[chatId].captured_at).getTime();if(age<30000)return{status:"fresh"};}
 const raw=await fetchRaw(chatId);const data=JSON.parse(raw);if(!force&&idx[chatId]&&idx[chatId].updated_at===data.updated_at)return{status:"fresh"};await dbPut(chatId,raw);var meta={name:data.name||"Untitled",updated_at:data.updated_at,created_at:data.created_at,message_count:data.chat_messages?data.chat_messages.length:0,captured_at:new Date().toISOString(),};await putIndex(chatId,meta);var gh=await getGitHubConfig();if(gh&&gh.auto)ghPush(chatId,raw,meta).catch(function(e){console.error("gh_push:",e.message);});return{status:"captured",name:data.name,messages:data.chat_messages?data.chat_messages.length:0};}
-async function sync(){const org=await getOrg();const list=await api("/api/organizations/"+org.uuid+"/chat_conversations");const convos=Array.isArray(list)?list:(list.results||list.data||[]);let captured=0,exported=0,errors=0;for(const c of convos){try{await capture(c.uuid||c.id,false);captured++;}
-catch(e){errors++;if(e.message==="429")await new Promise(r=>setTimeout(r,5000));}
-await new Promise(r=>setTimeout(r,300));}
-const idx=await getIndex();for(const[id,meta]of Object.entries(idx)){const raw=await dbGet(id);if(!raw)continue;await dl(raw,SYNC_DIR+"/"+slug(meta.name)+"-"+id.slice(0,8)+".json","application/json");exported++;await new Promise(r=>setTimeout(r,100));}
-await chrome.storage.local.set({_last_sync:new Date().toISOString()});return{captured:captured,exported:exported,total:convos.length,errors:errors};}
+async function sync(){/* Export everything already captured as a single zip. Background alarm keeps data fresh. */
+const idx=await getIndex();const ids=Object.keys(idx);let exported=0;const files=[];for(const id of ids){const raw=await dbGet(id);if(!raw)continue;const meta=idx[id];files.push({name:slug(meta.name)+"-"+id.slice(0,8)+".json",data:raw});exported++;}
+if(files.length>0){const zip=buildZip(files);const date=new Date().toISOString().slice(0,10);await dlBlob(zip,SYNC_DIR+"/clodcapture-sync-"+date+".zip");}
+await chrome.storage.local.set({_last_sync:new Date().toISOString()});return{captured:ids.length,exported:exported,total:ids.length,errors:0};}
 async function grab(chatId){const raw=await fetchRaw(chatId);const data=JSON.parse(raw);const date=new Date().toISOString().slice(0,10);await dl(raw,slug(data.name)+"-"+date+".json","application/json");return{status:"grabbed",name:data.name,messages:data.chat_messages?data.chat_messages.length:0};}
 async function getDistilled(chatId){const raw=await dbGet(chatId);if(!raw)throw new Error("not_found");return distill(raw);}
 chrome.alarms.create("bg_sync",{periodInMinutes:30});chrome.alarms.onAlarm.addListener(async alarm=>{if(alarm.name!=="bg_sync")return;try{const org=await getOrg();const list=await api("/api/organizations/"+org.uuid+"/chat_conversations");const convos=Array.isArray(list)?list:(list.results||list.data||[]);for(const c of convos){try{await capture(c.uuid||c.id,false);}
 catch(e){if(e.message==="429")await new Promise(r=>setTimeout(r,5000));}
 await new Promise(r=>setTimeout(r,500));}}catch(e){console.error("bg_sync:",e.message);}});chrome.tabs.onUpdated.addListener((_,change,tab)=>{if(!tab.url||tab.url.indexOf("https://claude.ai")!==0)return;const m=tab.url.match(CHAT_RE);if(m&&(change.status==="complete"||change.url))
-capture(m[1],false).catch(e=>console.error("capture:",e.message));});chrome.runtime.onMessage.addListener((msg,sender,reply)=>{if(msg.type==="get_index"){getIndex().then(reply);return true;}
+capture(m[1],false).catch(e=>console.error("capture:",e.message));});function isPopup(sender){return!sender.tab&&sender.id===chrome.runtime.id;}
+function isTrusted(sender){return sender.id===chrome.runtime.id;}
+chrome.runtime.onMessage.addListener((msg,sender,reply)=>{if(!isTrusted(sender)){reply({error:"untrusted"});return true;}
+if(msg.type==="get_index"){getIndex().then(reply);return true;}
 if(msg.type==="get_state"){(async()=>{const idx=await getIndex();const usage=await navigator.storage.estimate().catch(()=>({usage:0}));const ls=(await chrome.storage.local.get("_last_sync"))._last_sync||null;reply({count:Object.keys(idx).length,bytes:usage.usage||0,last_sync:ls});})();return true;}
-if(msg.type==="capture"){capture(msg.chatId,true).then(reply).catch(e=>reply({status:"error",error:e.message}));return true;}
+if(msg.type==="capture"){if(!validUUID(msg.chatId)){reply({status:"error",error:"invalid_id"});return true;}if(sender.tab){capture(msg.chatId,false).catch(e=>console.error("capture:",e.message));reply({status:"queued"});return false;}capture(msg.chatId,true).then(reply).catch(e=>reply({status:"error",error:e.message}));return true;}
 if(msg.type==="sync"){sync().then(reply).catch(e=>reply({status:"error",error:e.message}));return true;}
 if(msg.type==="grab"){grab(msg.chatId).then(reply).catch(e=>reply({status:"error",error:e.message}));return true;}
 if(msg.type==="get_tab_chat"){chrome.tabs.query({active:true,currentWindow:true},tabs=>{const m=tabs[0]&&tabs[0].url?tabs[0].url.match(CHAT_RE):null;reply(m?m[1]:null);});return true;}
 if(msg.type==="export_one"){(async()=>{const raw=await dbGet(msg.chatId);if(!raw){reply({status:"not_found"});return;}
 const idx=await getIndex();const meta=idx[msg.chatId];await dl(raw,SYNC_DIR+"/"+slug(meta?meta.name:"")+"-"+msg.chatId.slice(0,8)+".json","application/json");reply({status:"exported"});})();return true;}
 if(msg.type==="get_distilled"){getDistilled(msg.chatId).then(d=>reply({ok:true,data:d})).catch(e=>reply({ok:false,error:e.message}));return true;}
-if(msg.type==="gh_push_all"){ghPushAll().then(reply).catch(e=>reply({error:e.message}));return true;}
-if(msg.type==="gh_validate"){(async()=>{try{var r=await fetch("https://api.github.com/repos/"+msg.repo,{headers:{"Authorization":"Bearer "+msg.token,"Accept":"application/vnd.github+json"}});if(!r.ok)throw new Error(""+r.status);var data=await r.json();reply({ok:true,name:data.full_name,private:data.private});}catch(e){reply({ok:false,error:e.message});}})();return true;}
-if(msg.type==="remove"){(async()=>{await dbDelete(msg.chatId);await removeIndex(msg.chatId);reply({ok:true});})();return true;}
-if(msg.type==="clear"){(async()=>{await dbClear();const keysToKeep=["apiKey","ghToken","ghRepo","ghAutoSync"];const all=await chrome.storage.local.get(null);const toRemove=Object.keys(all).filter(k=>keysToKeep.indexOf(k)===-1&&k.indexOf('_ctx_')!==0);if(toRemove.length)await chrome.storage.local.remove(toRemove);updateBadge(0);reply({ok:true});})();return true;}
+if(msg.type==="gh_push_all"){if(!isPopup(sender)){reply({error:"denied"});return true;}ghPushAll().then(reply).catch(e=>reply({error:e.message}));return true;}
+if(msg.type==="gh_validate"){if(!isPopup(sender)){reply({error:"denied"});return true;}(async()=>{try{var r=await fetch("https://api.github.com/repos/"+encodeURI(msg.repo),{headers:{"Authorization":"Bearer "+msg.token,"Accept":"application/vnd.github+json"}});if(!r.ok)throw new Error(""+r.status);var data=await r.json();reply({ok:true,name:data.full_name,private:data.private});}catch(e){reply({ok:false,error:e.message});}})();return true;}
+if(msg.type==="remove"){if(!isPopup(sender)){reply({error:"denied"});return true;}(async()=>{await dbDelete(msg.chatId);await removeIndex(msg.chatId);reply({ok:true});})();return true;}
+if(msg.type==="clear"){if(!isPopup(sender)){reply({error:"denied"});return true;}(async()=>{await dbClear();_idxCache=null;const keysToKeep=["apiKey","ghToken","ghRepo","ghAutoSync"];const all=await chrome.storage.local.get(null);const toRemove=Object.keys(all).filter(k=>keysToKeep.indexOf(k)===-1&&k.indexOf('_ctx_')!==0);if(toRemove.length)await chrome.storage.local.remove(toRemove);updateBadge(0);reply({ok:true});})();return true;}
 if(msg.type==="get_context_usage"){(async()=>{var raw=await dbGet(msg.chatId);if(!raw){reply({pct:0,tokens:0,exact:false});return;}
 var apiKey=(await chrome.storage.local.get("apiKey")).apiKey;if(apiKey){try{var distilled=distill(raw);var msgs=distilled.messages.map(function(m){return{role:m.role==="human"?"user":"assistant",content:m.text};});var r=await fetch("https://api.anthropic.com/v1/messages/count_tokens",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01"},body:JSON.stringify({model:"claude-sonnet-4-20250514",messages:msgs})});if(r.ok){var data=await r.json();var tokens=data.input_tokens||0;reply({pct:Math.min(tokens/200000,1),tokens:tokens,exact:true});return;}}catch(e){}}
 var data=JSON.parse(raw);var chars=0;(data.chat_messages||[]).forEach(function(m){(m.content||[]).forEach(function(c){if(c.text)chars+=c.text.length;});});var tokens=Math.round(chars/3.5);reply({pct:Math.min(tokens/200000,1),tokens:tokens,exact:false});})();return true;}

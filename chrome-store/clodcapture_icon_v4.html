@@ -34,7 +34,7 @@ function drawWeb() {
   for (var ri = 0; ri < rings.length; ri++) {
     var t = rings[ri];
     var ringPulse = Math.max(0, pulse - (1-t) * 2.5);
-    var alpha = 0.08 + ringPulse * 0.35;
+    var alpha = 0.038 + ringPulse * 0.28;
     ctx.beginPath();
     for (var j = 0; j <= webR.length; j++) {
       var a = webR[j % webR.length];
@@ -46,7 +46,7 @@ function drawWeb() {
     }
     ctx.closePath();
     if (ringPulse > 0.01) { ctx.strokeStyle = 'rgba(217,119,87,' + (ringPulse*0.5).toFixed(3) + ')'; ctx.lineWidth = 2.5; ctx.stroke(); }
-    ctx.strokeStyle = 'rgba(255,240,230,' + alpha.toFixed(3) + ')'; ctx.lineWidth = 1.2; ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,240,230,' + alpha.toFixed(3) + ')'; ctx.lineWidth = 0.9; ctx.stroke();
   }
   for (var j = 0; j < webR.length; j++) {
     var a = webR[j];
@@ -56,7 +56,7 @@ function drawWeb() {
     var ex = CX + Math.cos(a) * 248, ey = CY + Math.sin(a) * 248;
     ctx.bezierCurveTo(CX + Math.cos(a)*80 + sx*0.6, CY + Math.sin(a)*80 + sy*0.6, CX + Math.cos(a)*160 + sx*0.15, CY + Math.sin(a)*160 + sy*0.15, ex, ey);
     if (nearP > 0.01) { ctx.strokeStyle = 'rgba(217,119,87,' + (nearP*0.35).toFixed(3) + ')'; ctx.lineWidth = 2.5; ctx.stroke(); }
-    ctx.strokeStyle = 'rgba(255,240,230,' + (0.10 + nearP*0.2).toFixed(3) + ')'; ctx.lineWidth = 1.2; ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,240,230,' + (0.055 + nearP*0.16).toFixed(3) + ')'; ctx.lineWidth = 0.9; ctx.stroke();
   }
   // dots
   for (var ri = 0; ri < rings.length; ri++) {
@@ -65,7 +65,7 @@ function drawWeb() {
       var px = CX + Math.cos(webR[j]) * t * 240 + sx * t * 0.3;
       var py = CY + Math.sin(webR[j]) * t * 240 + sy * t * 0.3;
       ctx.beginPath(); ctx.arc(px, py, 1.5 + dp*2, 0, Math.PI*2);
-      ctx.fillStyle = dp > 0.05 ? 'rgba(217,119,87,' + (0.15+dp*0.4).toFixed(3) + ')' : 'rgba(255,240,230,0.1)';
+      ctx.fillStyle = dp > 0.05 ? 'rgba(217,119,87,' + (0.15+dp*0.4).toFixed(3) + ')' : 'rgba(255,240,230,0.06)';
       ctx.fill();
     }
   }
@@ -76,18 +76,21 @@ function drawCreature() {
   ctx.save();
   ctx.translate(ox, oy);
 
-  // 10 legs - long, sharp, spider-like, bottom ones longer and drooping
+  // Bold terracotta spider (readable at 16px like a solid mascot mark)
+  var ORANGE = '#D97757';
+  var EDGE = 'rgba(18,14,26,0.42)';
+
   var legs = [
-    {a: -90, len: 105, curve: -8},
-    {a: -54, len: 100, curve: -12},
-    {a: -18, len: 95, curve: -6},
-    {a: 18, len: 95, curve: 6},
-    {a: 54, len: 100, curve: 12},
-    {a: 90, len: 105, curve: 8},
-    {a: 126, len: 115, curve: 18},
-    {a: 155, len: 125, curve: 22},
-    {a: -155, len: 125, curve: -22},
-    {a: -126, len: 115, curve: -18},
+    {a: -90, len: 112, curve: -9},
+    {a: -54, len: 106, curve: -14},
+    {a: -18, len: 102, curve: -7},
+    {a: 18, len: 102, curve: 7},
+    {a: 54, len: 106, curve: 14},
+    {a: 90, len: 112, curve: 9},
+    {a: 126, len: 122, curve: 20},
+    {a: 155, len: 132, curve: 24},
+    {a: -155, len: 132, curve: -24},
+    {a: -126, len: 122, curve: -20},
   ];
 
   for (var i = 0; i < legs.length; i++) {
@@ -98,43 +101,42 @@ function drawCreature() {
     var midX = Math.cos(rad) * l.len * 0.5 + l.curve;
     var midY = Math.sin(rad) * l.len * 0.5 + Math.abs(l.curve) * 0.3;
 
-    // Each leg: thick at base, sharp point at tip
     var perpX = -Math.sin(rad);
     var perpY = Math.cos(rad);
-    var baseW = 9;
-    var midW = 6;
+    var baseW = 15;
+    var midW = 10;
 
     ctx.beginPath();
     ctx.moveTo(perpX * baseW, perpY * baseW);
     ctx.quadraticCurveTo(midX + perpX * midW, midY + perpY * midW, tipX, tipY);
     ctx.quadraticCurveTo(midX - perpX * midW, midY - perpY * midW, -perpX * baseW, -perpY * baseW);
     ctx.closePath();
-    ctx.fillStyle = i % 2 === 0 ? 'rgba(217,119,87,0.92)' : 'rgba(217,119,87,0.85)';
+    ctx.fillStyle = ORANGE;
     ctx.fill();
+    ctx.strokeStyle = EDGE;
+    ctx.lineWidth = 2.75;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.stroke();
   }
 
-  // Arachnid body - head (smaller top ellipse) + abdomen (larger bottom bulge)
-  // Head
   ctx.beginPath();
-  ctx.ellipse(0, -8, 14, 12, 0, 0, Math.PI * 2);
-  ctx.fillStyle = '#D97757';
+  ctx.ellipse(0, -9, 17, 14, 0, 0, Math.PI * 2);
+  ctx.fillStyle = ORANGE;
   ctx.fill();
+  ctx.strokeStyle = EDGE;
+  ctx.lineWidth = 2.75;
+  ctx.stroke();
 
-  // Abdomen - larger, teardrop pulling down
   ctx.beginPath();
-  ctx.moveTo(-16, 0);
-  ctx.bezierCurveTo(-18, 12, -14, 28, 0, 34);
-  ctx.bezierCurveTo(14, 28, 18, 12, 16, 0);
-  ctx.bezierCurveTo(14, -4, -14, -4, -16, 0);
-  ctx.fillStyle = '#D97757';
+  ctx.moveTo(-18, 0);
+  ctx.bezierCurveTo(-21, 14, -16, 32, 0, 39);
+  ctx.bezierCurveTo(16, 32, 21, 14, 18, 0);
+  ctx.bezierCurveTo(16, -5, -16, -5, -18, 0);
+  ctx.fillStyle = ORANGE;
   ctx.fill();
-
-  // Subtle segment line between head and abdomen
-  ctx.beginPath();
-  ctx.moveTo(-12, -1);
-  ctx.quadraticCurveTo(0, 3, 12, -1);
-  ctx.strokeStyle = 'rgba(30,26,38,0.3)';
-  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = EDGE;
+  ctx.lineWidth = 2.75;
   ctx.stroke();
 
   ctx.restore();

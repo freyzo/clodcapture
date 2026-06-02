@@ -1,0 +1,17 @@
+{
+  "name": "clodcapture",
+  "version": "1.0.0",
+  "description": "**Auto-save, export, and continue Claude.ai chat sessions across conversations.**",
+  "main": "background.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "icons": "node scripts/render-extension-icons.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.52.0",
+    "sharp": "^0.34.2"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

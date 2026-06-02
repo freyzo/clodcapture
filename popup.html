@@ -4,13 +4,12 @@
   <meta charset="utf-8">
   <title>clodcapture</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap');
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html { background: transparent; }
     body {
-      width: 300px; padding: 0;
+      width: 360px; padding: 0;
       background: linear-gradient(160deg, rgba(42,36,48,0.97), rgba(30,26,38,0.98));
-      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
       -webkit-font-smoothing: antialiased;
     }
 
@@ -49,6 +48,17 @@
     .row:last-child { margin-bottom:0; }
     .lbl { font-size:9px; font-weight:700; letter-spacing:.10em; text-transform:uppercase; color:rgba(255,240,230,0.22); }
     .val { font-size:11px; font-weight:600; color:rgba(255,240,230,0.6); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    #conv-id.val {
+      white-space: normal;
+      overflow: visible;
+      text-overflow: clip;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      line-height: 1.4;
+      font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+      font-size: 10px;
+      font-weight: 500;
+    }
     .val.ok  { color:#D97757; }
     .val.dim { color:rgba(255,240,230,0.2); }
 
@@ -118,10 +128,24 @@
     .list-title { font-size:9px; font-weight:700; letter-spacing:.10em; text-transform:uppercase; color:rgba(255,240,230,0.22); }
     .list-count { font-size:9px; font-weight:600; color:#D97757; }
 
+    .search-wrap {
+      position:relative; display:flex; align-items:center;
+      animation: su .5s ease both; animation-delay:.21s;
+    }
+    .search-icon { position:absolute; left:9px; color:rgba(255,240,230,0.18); pointer-events:none; flex-shrink:0; }
+    .search-input {
+      width:100%; font-size:10.5px; font-weight:500; font-family:inherit;
+      padding:6px 10px 6px 28px; border-radius:8px;
+      border:1px solid rgba(255,255,255,0.05); background:rgba(255,255,255,0.03);
+      color:rgba(255,240,230,0.8); outline:none; transition:border-color .15s;
+    }
+    .search-input::placeholder { color:rgba(255,240,230,0.15); }
+    .search-input:focus { border-color:rgba(217,119,87,0.25); }
     .chat-list {
-      max-height: 200px; overflow-y: auto; display:flex; flex-direction:column; gap:4px;
+      max-height: 135px; overflow-y: auto; display:flex; flex-direction:column; gap:4px;
       animation: su .5s ease both; animation-delay:.22s;
     }
+    .chat-list.expanded { max-height:300px; }
     .chat-list::-webkit-scrollbar { width:3px; }
     .chat-list::-webkit-scrollbar-thumb { background:rgba(217,119,87,0.15); border-radius:2px; }
 
@@ -241,6 +265,10 @@
       <div class="list-header">
         <span class="list-title">Captured Chats</span>
         <span class="list-count" id="list-count">0</span>
+      </div>
+      <div class="search-wrap" id="search-wrap" style="display:none;">
+        <svg class="search-icon" width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="4.5"/><line x1="9.2" y1="9.2" x2="12.5" y2="12.5"/></svg>
+        <input class="search-input" id="search-input" type="text" placeholder="Search chats..." autocomplete="off" spellcheck="false">
       </div>
       <div class="chat-list" id="chat-list"></div>
 
