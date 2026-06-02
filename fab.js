@@ -15,8 +15,8 @@ function toast(msg){clearTimeout(_toastTimer);toastEl.textContent=msg;toastEl.cl
 
 /* ── FAB button ──────────────────────────────────── */
 var fab=document.createElement('button');fab.id='cc-fab';
-fab.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="#1e1a26" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v6m0 8v6M2 12h6m8 0h6"/><circle cx="12" cy="12" r="3"/></svg>';
-fab.title='clodcapture';
+fab.innerHTML='<span id="cc-fab-pct">0%</span>';
+fab.title='clodcapture - context usage';
 
 /* ring container */
 var ring=document.createElement('div');ring.id='cc-fab-ring';fab.appendChild(ring);
@@ -116,11 +116,14 @@ async function injectText(text){
   if(!el.textContent.trim())document.execCommand('insertText',false,text);}
 
 /* ── Context ring ────────────────────────────────── */
-async function updateRing(){var m=location.pathname.match(CHAT_RE);if(!m)return;
-  var ctx=await send('get_context_usage',{chatId:m[1]});if(!ctx||!ctx.tokens)return;
-  var pct=ctx.pct,color=pct<0.5?'#22c55e':pct<0.8?'#d97706':'#ef4444';
-  var r=26,cx=28,cy=28,circ=2*Math.PI*r,fill=circ*pct;
-  ring.innerHTML='<svg viewBox="0 0 56 56"><circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="rgba(0,0,0,0.1)" stroke-width="3"/><circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="'+color+'" stroke-width="3" stroke-dasharray="'+fill+' '+(circ-fill)+'" stroke-linecap="round" transform="rotate(-90 '+cx+' '+cy+')" opacity="0.85"/></svg>';}
+async function updateRing(){var m=location.pathname.match(CHAT_RE);
+  var pctEl=document.getElementById('cc-fab-pct');
+  if(!m){if(pctEl)pctEl.textContent='CC';ring.innerHTML='';return;}
+  var ctx=await send('get_context_usage',{chatId:m[1]});if(!ctx||!ctx.tokens){if(pctEl)pctEl.textContent='0%';ring.innerHTML='';return;}
+  var pct=ctx.pct,pctNum=Math.round(pct*100),color=pct<0.5?'#22c55e':pct<0.8?'#d97706':'#ef4444';
+  if(pctEl){pctEl.textContent=pctNum+'%';pctEl.style.color=color;}
+  var r=28,cx=30,cy=30,circ=2*Math.PI*r,fill=circ*pct;
+  ring.innerHTML='<svg viewBox="0 0 60 60"><circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="rgba(0,0,0,0.06)" stroke-width="3"/><circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="'+color+'" stroke-width="3" stroke-dasharray="'+fill+' '+(circ-fill)+'" stroke-linecap="round" transform="rotate(-90 '+cx+' '+cy+')" opacity="0.85"/></svg>';}
 
 /* ── Event wiring ────────────────────────────────── */
 fab.addEventListener('click',function(){if(!moved)togglePanel();});
