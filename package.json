@@ -1,6 +1,6 @@
 {
   "name": "clodcapture",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "**Auto-save, export, and continue Claude.ai chat sessions across conversations.**",
   "main": "background.js",
   "scripts": {
