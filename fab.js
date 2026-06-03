@@ -73,13 +73,17 @@ function closePanel(){panelOpen=false;panel.classList.remove('cc-open');
 
 function renderList(){var list=document.getElementById('cc-fab-list');
   var q=searchTerm.toLowerCase();
-  var filtered=q?allRows.filter(function(e){return(e[1].name||'').toLowerCase().indexOf(q)!==-1;}):allRows;
+  var isTagSearch=q.charAt(0)==='#';var tagQ=isTagSearch?q.slice(1):'';
+  var filtered=q?allRows.filter(function(e){if(isTagSearch){var tags=e[1].tags||[];return tags.some(function(t){return t.toLowerCase().indexOf(tagQ)!==-1;});}return(e[1].name||'').toLowerCase().indexOf(q)!==-1;}):allRows;
   if(!filtered.length){list.innerHTML='<div class="cc-empty">'+(allRows.length?'No matches':'No captured chats yet')+'</div>';return;}
   list.innerHTML=filtered.slice(0,5).map(function(e){var id=e[0],v=e[1];
     return'<div class="cc-item" data-id="'+esc(id)+'"><div class="cc-item-info"><div class="cc-item-name" title="'+esc(v.name)+'">'+esc(v.name||'Untitled')+'</div><div class="cc-item-meta">'+(v.message_count||0)+' msgs &middot; '+ago(v.captured_at)+'</div></div><button class="cc-go" data-id="'+esc(id)+'">Go</button></div>';}).join('');
   list.querySelectorAll('.cc-go').forEach(function(b){b.onclick=function(ev){ev.stopPropagation();
     if(window.__ccSpine){window.__ccSpine.open(b.dataset.id,panel);}
-    else{continueChat(b.dataset.id,b);}};});}
+    else{continueChat(b.dataset.id,b);}};});
+  /* hook for keys.js - render tags + long-press multi-select */
+  list.querySelectorAll('.cc-item').forEach(function(el){
+    if(window.__ccRenderItemHook)window.__ccRenderItemHook(el,el.dataset.id);});}
 /* expose for spine.js */
 window.__ccToast=toast;window.__ccReopenList=function(){renderList();var s=panel.querySelector('.cc-search-wrap');if(s)s.style.display='';var l=document.getElementById('cc-fab-list');if(l)l.style.display='';};
 
