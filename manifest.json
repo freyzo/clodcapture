@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "clodcapture",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "Save and continue AI chat sessions across conversations",
   "permissions": ["storage", "unlimitedStorage", "tabs", "alarms", "cookies", "downloads", "clipboardWrite", "clipboardRead", "scripting"],
   "host_permissions": ["https://claude.ai/*", "https://api.anthropic.com/*", "https://api.github.com/*"],
