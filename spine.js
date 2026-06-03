@@ -95,9 +95,10 @@ function renderSpine(panelEl){
         chrome.runtime.sendMessage({type:'get_distilled_range',chatId:_chatId,from:_from,to:_to},res);
       });
       if(!r||!r.ok)throw new Error(r?r.error:'failed');
+      var selCount=_to-_from+1;
       var parts=['[clawd-continue] Continuing from messages '+_from+'-'+_to+' of '+msgs.length+' in session "'+r.data.title+'".\n\nDigest this prior session slice and continue from where it left off.\n'];
       r.data.messages.forEach(function(m,i){parts.push((m.role==='human'?'**Human:**':'**Assistant:**')+'\n'+m.text+'\n');});
-      parts.push('---\nResume from here. You have partial context ('+count+' of '+msgs.length+' messages). Ask if you need earlier context.');
+      parts.push('---\nResume from here. You have partial context ('+selCount+' of '+msgs.length+' messages). Ask if you need earlier context.');
       var text=parts.join('\n');
       var onNew=location.pathname==='/new'||!location.pathname.match(CHAT_RE);
       if(!onNew){
