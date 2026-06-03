@@ -40,8 +40,11 @@
 | Download raw JSON | Click **Grab** |
 | Export everything | Click **Sync All** - zips to `Downloads/clodcapture/` |
 | Resume in a new chat | Click the continue button on any captured chat |
+| Quick continue (FAB) | Click the floating spider button on claude.ai |
+| Select a range to continue | Use the timeline spine to pick specific messages |
+| Combine multiple chats | Long-press to multi-select, continue with stacked keys |
 | Push to GitHub | Configure repo in Settings, click **Push All** |
-| See context usage | Check the gauge in the popup footer |
+| See context usage | Check the gauge in the popup footer or the FAB ring |
 
 ---
 
@@ -87,6 +90,18 @@ Resume a saved thread in a new chat:
 - **Without:** estimate via `chars / 3.5`.
 - Shown as a segmented ring in the popup footer.
 
+### Floating Action Button (FAB)
+
+A draggable jelly spider button injected directly onto claude.ai. Click to open a mini-panel with your recent captured chats. One click to continue any session in a new chat. Toggle with **Cmd+Shift+K**.
+
+### Timeline Spine
+
+Click "Go" on any chat in the FAB panel to open the timeline spine - a vertical scrubber showing every message as a proportional marker (orange = human, purple = assistant). Drag the handles to select a range. Quick-select chips: Last 10, Last 25, 2nd half, All. Live token estimate. Only your selected slice gets injected into the new chat.
+
+### Portable Chat Keys
+
+Each chat can generate a compact summary key (~500 tokens) via Haiku. Keys contain: summary, entities (people, tools, files, decisions), arc, tags, current state, and next step. Long-press chat items to multi-select up to 5 sessions, then "Go with keys" to stack all their summaries into one new chat. Auto-tags show as colored pills and are searchable with `#tag-name`.
+
 ---
 
 ## Architecture
@@ -94,6 +109,21 @@ Resume a saved thread in a new chat:
 <p align="center">
   <img src="assets/architecture.png" alt="clodcapture architecture diagram" width="720" />
 </p>
+
+```
+manifest.json            MV3 service_worker + content_scripts on claude.ai
+  +-- background.js      capture, sync, export, GitHub push, alarms,
+  |                       spine indexing, key generation, token count
+  +-- content.js         history patching, capture triggers, composer injection
+  +-- fab.js             floating action button, panel, chat list
+  +-- spine.js           timeline scrubber, range selection, partial continue
+  +-- keys.js            portable keys, tagging, multi-select, key-based continue
+  +-- fab.css + spine.css styles for FAB, panel, spine, tags, liquid buttons
+  +-- popup.html/js      popup UI, settings, full chat list
+  +-- spider.js          3D spider canvas animation (click = bounce)
+```
+
+Zero runtime dependencies. ~1100 lines across 8 JS files.
 
 ---
 
