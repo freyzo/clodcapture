@@ -64,7 +64,12 @@ async function openPanel(){panelOpen=true;positionPanel();panel.classList.add('c
   renderList();document.getElementById('cc-fab-search').value='';searchTerm='';
   document.getElementById('cc-fab-search').focus();}
 
-function closePanel(){panelOpen=false;panel.classList.remove('cc-open');}
+function closePanel(){panelOpen=false;panel.classList.remove('cc-open');
+  /* clean up spine if open */
+  if(window.__ccSpine&&window.__ccSpine.isOpen())window.__ccSpine.close();
+  /* restore search + list visibility */
+  var s=panel.querySelector('.cc-search-wrap');if(s)s.style.display='';
+  var l=document.getElementById('cc-fab-list');if(l)l.style.display='';}
 
 function renderList(){var list=document.getElementById('cc-fab-list');
   var q=searchTerm.toLowerCase();
