@@ -72,7 +72,11 @@ function renderList(){var list=document.getElementById('cc-fab-list');
   if(!filtered.length){list.innerHTML='<div class="cc-empty">'+(allRows.length?'No matches':'No captured chats yet')+'</div>';return;}
   list.innerHTML=filtered.slice(0,5).map(function(e){var id=e[0],v=e[1];
     return'<div class="cc-item" data-id="'+esc(id)+'"><div class="cc-item-info"><div class="cc-item-name" title="'+esc(v.name)+'">'+esc(v.name||'Untitled')+'</div><div class="cc-item-meta">'+(v.message_count||0)+' msgs &middot; '+ago(v.captured_at)+'</div></div><button class="cc-go" data-id="'+esc(id)+'">Go</button></div>';}).join('');
-  list.querySelectorAll('.cc-go').forEach(function(b){b.onclick=function(ev){ev.stopPropagation();continueChat(b.dataset.id,b);};});}
+  list.querySelectorAll('.cc-go').forEach(function(b){b.onclick=function(ev){ev.stopPropagation();
+    if(window.__ccSpine){window.__ccSpine.open(b.dataset.id,panel);}
+    else{continueChat(b.dataset.id,b);}};});}
+/* expose for spine.js */
+window.__ccToast=toast;window.__ccReopenList=function(){renderList();var s=panel.querySelector('.cc-search-wrap');if(s)s.style.display='';var l=document.getElementById('cc-fab-list');if(l)l.style.display='';};
 
 /* ── Continue logic ──────────────────────────────── */
 async function continueChat(chatId,btn){

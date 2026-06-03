@@ -9,8 +9,8 @@
   "content_scripts": [
     {
       "matches": ["https://claude.ai/*"],
-      "js": ["content.js", "fab.js"],
-      "css": ["fab.css"],
+      "js": ["content.js", "fab.js", "spine.js"],
+      "css": ["fab.css", "spine.css"],
       "run_at": "document_idle"
     }
   ],
