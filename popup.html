@@ -67,6 +67,7 @@
     .sync-dot.green { background:#22c55e; box-shadow:0 0 6px rgba(34,197,94,0.4); }
     .sync-dot.amber { background:#d97706; box-shadow:0 0 6px rgba(217,119,6,0.4); }
     .sync-dot.red { background:#ef4444; box-shadow:0 0 4px rgba(239,68,68,0.3); }
+    .sync-dot.dim { background:rgba(255,240,230,0.15); box-shadow:none; }
 
     .settings-panel {
       display: none; flex-direction: column; gap: 8px;
@@ -218,9 +219,9 @@
           <div class="val" id="conv-id">-</div>
         </div>
         <div class="row">
-          <div class="lbl">Sync</div>
+          <div class="lbl">Export</div>
           <div class="val sync-row">
-            <span class="sync-dot red" id="sync-dot"></span>
+            <span class="sync-dot dim" id="sync-dot"></span>
             <span id="sync-label">-</span>
           </div>
         </div>
@@ -272,7 +273,7 @@
       </div>
       <div class="chat-list" id="chat-list"></div>
 
-      <div class="status">
+      <div class="status" title="Tip: press Cmd+Shift+K on claude.ai to toggle the spider panel">
         <div class="dw"><div class="dot" id="dot"></div><div class="dot-ring"></div></div>
         <span id="status-msg">-</span>
       </div>
