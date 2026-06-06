@@ -51,13 +51,7 @@
 ## UI
 
 <p align="center">
-  <img src="assets/extension-UI/clodcapture-ui.png" alt="clodcapture popup UI" width="360" />
-</p>
-
-<p align="center">
-  <img src="assets/extension-UI/button-ui.png" alt="FAB with chat panel" width="340" />
-  &nbsp;&nbsp;
-  <img src="assets/extension-UI/button-ui2.png" alt="Timeline spine with key selection" width="260" />
+  <img src="assets/extension-UI/newUI.jpg" alt="clodcapture UI" width="720" />
 </p>
 
 ## Install
