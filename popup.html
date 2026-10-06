@@ -253,6 +253,14 @@
           <span class="icon"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v3.5a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8"/><polyline points="4,5 7,2 10,5"/><line x1="7" y1="2" x2="7" y2="10"/></svg></span>
           <span>Push All to GitHub</span>
         </button>
+        <div style="height:1px; background:rgba(255,255,255,0.04); margin:4px 0;"></div>
+        <div class="settings-lbl">Portable Keys</div>
+        <div class="btn-row">
+          <button class="btn" id="btn-keys-export" style="padding:7px 8px; font-size:10px; animation:none;" title="Download every chat key as one JSON file">Export keys</button>
+          <button class="btn" id="btn-keys-import" style="padding:7px 8px; font-size:10px; animation:none;" title="Load keys exported from another browser">Import keys</button>
+        </div>
+        <input type="file" id="keys-file" accept="application/json,.json" style="display:none;">
+        <div class="api-status" id="keys-status">Move chat summaries + tags between browsers</div>
       </div>
 
       <div class="btn-row">

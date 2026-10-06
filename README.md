@@ -41,8 +41,12 @@
 | Export everything | Click **Sync All** - zips to `Downloads/clodcapture/` |
 | Resume in a new chat | Click the continue button on any captured chat |
 | Quick continue (FAB) | Click the floating spider button on claude.ai |
+| Continue from a summary instead of the full chat | Switch the panel to **Key** mode, then **Go** |
 | Select a range to continue | Use the timeline spine to pick specific messages |
 | Combine multiple chats | Long-press to multi-select, continue with stacked keys |
+| Continue a whole project | Click a project chip in the panel, then **Go with keys** |
+| Organize chats | Edit tags in the panel (**+** to add, **×** to remove), search with `#tag` |
+| Move keys to another browser | Settings → **Export keys** / **Import keys** |
 | Push to GitHub | Configure repo in Settings, click **Push All** |
 | See context usage | Check the gauge in the popup footer or the FAB ring |
 
@@ -73,7 +77,7 @@
 1. Content script patches `history.pushState` / `replaceState` and listens for `popstate`. Switching chats triggers a capture via the service worker.
 2. Uses your existing claude.ai session cookies to call the conversation API. No API key required for saving.
 3. Raw JSON stored in **IndexedDB** (`brainjar`). Metadata indexed in `chrome.storage.local` for fast popup rendering.
-4. Background alarm refreshes captures every **30 minutes**.
+4. Background alarm checks every **30 minutes** and re-downloads only chats whose `updated_at` changed.
 
 ### clawd-continue (session resume)
 
@@ -82,7 +86,7 @@ Resume a saved thread in a new chat:
 1. Distills captured JSON to `{ role, text }` pairs.
 2. **With API key:** Claude Sonnet builds an intelligence report (entities, arc, state, next step) - not a line-by-line replay.
 3. **Without API key:** Fallback prompt embeds session JSON directly.
-4. Injects into the claude.ai composer via `ClipboardEvent`.
+4. Opens a new chat (`/new`) and injects into the composer via `ClipboardEvent`. The text is handed across the page load through extension storage, so it also works when you start from inside another chat.
 
 ### Context usage gauge
 
@@ -94,13 +98,15 @@ Resume a saved thread in a new chat:
 
 A draggable jelly spider button injected directly onto claude.ai. Click to open a mini-panel with your recent captured chats. One click to continue any session in a new chat. Toggle with **Cmd+Shift+K**.
 
+The panel's **Go uses** switch picks how **Go** continues: **Full** opens the timeline spine; **Key** continues straight from the chat's summary key. Chats you continued show where they came from (`↳ parent chat`).
+
 ### Timeline Spine
 
-Click "Go" on any chat in the FAB panel to open the timeline spine - a vertical scrubber showing every message as a proportional marker (orange = human, purple = assistant). Drag the handles to select a range. Quick-select chips: Last 10, Last 25, 2nd half, All. Live token estimate. Only your selected slice gets injected into the new chat.
+Click "Go" on any chat in the FAB panel (Full mode) to open the timeline spine - a vertical scrubber showing every message as a proportional marker (orange = human, purple = assistant; past 100 messages, markers are grouped). Drag the handles to select a range. Quick-select chips: Last 10, Last 25, 2nd half, **Since break** (after the longest pause of 30+ minutes), All. Zoom with the **1×** chip or pinch / Ctrl+scroll on the bar. The chat's first 2 messages are always carried along for context. Live token estimate, or an **exact** count with an API key. Only your selected slice gets injected into the new chat.
 
 ### Portable Chat Keys
 
-Each chat can generate a compact summary key (~500 tokens) via Haiku. Keys contain: summary, entities (people, tools, files, decisions), arc, tags, current state, and next step. Long-press chat items to multi-select up to 5 sessions, then "Go with keys" to stack all their summaries into one new chat. Auto-tags show as colored pills and are searchable with `#tag-name`.
+Each chat can generate a compact summary key (~500 tokens) via Haiku. With an API key, keys are built automatically for chats you open (at most one call every 10 seconds) and rebuilt when the chat changes. Keys contain: summary, entities (people, tools, files, decisions), arc, tags, current state, and next step. Long-press chat items to multi-select up to 5 sessions, then "Go with keys" to stack all their summaries into one new chat. Auto-tags show as colored pills, are searchable with `#tag-name`, and can be edited (your edits survive key rebuilds). Chats that share 2+ tags or are linked by a continue form a **project**; click its chip to select it. Export / import all keys from Settings.
 
 ---
 
@@ -117,13 +123,13 @@ manifest.json            MV3 service_worker + content_scripts on claude.ai
   +-- content.js         history patching, capture triggers, composer injection
   +-- fab.js             floating action button, panel, chat list
   +-- spine.js           timeline scrubber, range selection, partial continue
-  +-- keys.js            portable keys, tagging, multi-select, key-based continue
+  +-- keys.js            portable keys, tag editing, projects, multi-select
   +-- fab.css + spine.css styles for FAB, panel, spine, tags, liquid buttons
-  +-- popup.html/js      popup UI, settings, full chat list
+  +-- popup.html/js      popup UI, settings, key export/import, full chat list
   +-- spider.js          3D spider canvas animation (click = bounce)
 ```
 
-Zero runtime dependencies. ~1100 lines across 8 JS files.
+Zero runtime dependencies. ~1000 lines across 7 JS files.
 
 ---
 
@@ -147,11 +153,12 @@ Zero runtime dependencies. ~1100 lines across 8 JS files.
 
 | Setting | What it does |
 | --- | --- |
-| **API key** | Enables exact token counting and AI-powered session digests via clawd-continue |
+| **API key** | Enables exact token counting, automatic summary keys, and AI-powered session digests via clawd-continue |
 | **GitHub repo** | `owner/repo` for backup. Push captured sessions as versioned JSON files |
 | **Auto-push** | Automatically push to GitHub on every capture |
+| **Portable keys** | Export every chat key as one JSON file, or import keys from another browser |
 
-All settings stored locally in `chrome.storage.local`. No data leaves your machine unless you explicitly configure GitHub backup.
+All settings stored locally in `chrome.storage.local`. No data leaves your machine unless you configure GitHub backup or an API key (chat text is then sent to `api.anthropic.com` for digests, keys and token counts).
 
 ---
 

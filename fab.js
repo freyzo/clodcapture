@@ -6,7 +6,7 @@ var send=function(t,d){return new Promise(function(r){chrome.runtime.sendMessage
 
 /* ── Helpers ─────────────────────────────────────── */
 function ago(iso){if(!iso)return'';var m=Math.floor((Date.now()-new Date(iso))/60000);if(m<1)return'now';if(m<60)return m+'m';var h=Math.floor(m/60);return h<24?h+'h':Math.floor(h/24)+'d';}
-function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 
 /* ── Toast ───────────────────────────────────────── */
 var toastEl=document.createElement('div');toastEl.id='cc-toast';document.body.appendChild(toastEl);
@@ -46,10 +46,13 @@ document.addEventListener('mouseup',function(){if(!dragging)return;dragging=fals
 
 /* ── Panel ───────────────────────────────────────── */
 var panel=document.createElement('div');panel.id='cc-fab-panel';
-panel.innerHTML='<div class="cc-search-wrap"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="6" cy="6" r="4.5"/><line x1="9.2" y1="9.2" x2="12.5" y2="12.5"/></svg><input id="cc-fab-search" type="text" placeholder="Search chats..." autocomplete="off" spellcheck="false"></div><div id="cc-fab-list"></div>';
+panel.innerHTML='<div class="cc-search-wrap"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="6" cy="6" r="4.5"/><line x1="9.2" y1="9.2" x2="12.5" y2="12.5"/></svg><input id="cc-fab-search" type="text" placeholder="Search chats..." autocomplete="off" spellcheck="false"><div class="cc-mode" title="Full: pick messages on the timeline spine. Key: continue from the chat&#39;s compact summary key."><span class="cc-mode-lbl">Go uses</span><button class="cc-mode-btn" data-mode="full">Full</button><button class="cc-mode-btn" data-mode="key">Key</button></div></div><div id="cc-fab-list"></div>';
 document.body.appendChild(panel);
 
-var panelOpen=false,allRows=[],searchTerm='';
+var panelOpen=false,allRows=[],searchTerm='',continueMode='full';
+function paintMode(){panel.querySelectorAll('.cc-mode-btn').forEach(function(b){b.classList.toggle('cc-on',b.dataset.mode===continueMode);});}
+panel.querySelectorAll('.cc-mode-btn').forEach(function(b){b.onclick=function(e){e.stopPropagation();continueMode=b.dataset.mode;chrome.storage.local.set({_continue_mode:continueMode});paintMode();};});
+chrome.storage.local.get('_continue_mode',function(d){if(d._continue_mode==='key')continueMode='key';paintMode();});
 
 function positionPanel(){var r=fab.getBoundingClientRect();var above=r.top>400;
   panel.style.left=Math.max(8,Math.min(window.innerWidth-292,r.left-116))+'px';
@@ -58,9 +61,11 @@ function positionPanel(){var r=fab.getBoundingClientRect();var above=r.top>400;
 
 function togglePanel(){if(panelOpen){closePanel();}else{openPanel();}}
 
+async function loadRows(){var idx=await send('get_index');
+  allRows=Object.entries(idx||{}).sort(function(a,b){return new Date(b[1].captured_at)-new Date(a[1].captured_at);});}
+
 async function openPanel(){panelOpen=true;positionPanel();panel.classList.add('cc-open');
-  var idx=await send('get_index');
-  allRows=Object.entries(idx||{}).sort(function(a,b){return new Date(b[1].captured_at)-new Date(a[1].captured_at);});
+  await loadRows();
   renderList();document.getElementById('cc-fab-search').value='';searchTerm='';
   document.getElementById('cc-fab-search').focus();}
 
@@ -76,24 +81,31 @@ function renderList(){var list=document.getElementById('cc-fab-list');
   var isTagSearch=q.charAt(0)==='#';var tagQ=isTagSearch?q.slice(1):'';
   var filtered=q?allRows.filter(function(e){if(isTagSearch){var tags=e[1].tags||[];return tags.some(function(t){return t.toLowerCase().indexOf(tagQ)!==-1;});}return(e[1].name||'').toLowerCase().indexOf(q)!==-1;}):allRows;
   if(!filtered.length){list.innerHTML='<div class="cc-empty">'+(allRows.length?'No matches':'No captured chats yet')+'</div>';return;}
-  list.innerHTML=filtered.slice(0,5).map(function(e){var id=e[0],v=e[1];
-    return'<div class="cc-item" data-id="'+esc(id)+'"><div class="cc-item-info"><div class="cc-item-name" title="'+esc(v.name)+'">'+esc(v.name||'Untitled')+'</div><div class="cc-item-meta">'+(v.message_count||0)+' msgs &middot; '+ago(v.captured_at)+'</div></div><button class="cc-go" data-id="'+esc(id)+'">Go</button></div>';}).join('');
+  var byId={};allRows.forEach(function(e){byId[e[0]]=e[1];});
+  list.innerHTML=(q?'':'<div id="cc-projects"></div>')+filtered.slice(0,5).map(function(e){var id=e[0],v=e[1];
+    var from=v.parents&&v.parents.length?v.parents.map(function(p){return byId[p]?byId[p].name||'Untitled':'earlier chat';}):null;
+    var lineage=from?' &middot; <span class="cc-lineage" title="Continued from: '+esc(from.join(', '))+'">&#8627; '+esc(from[0].slice(0,16))+'</span>':'';
+    return'<div class="cc-item" data-id="'+esc(id)+'"><div class="cc-item-info"><div class="cc-item-name" title="'+esc(v.name)+'">'+esc(v.name||'Untitled')+'</div><div class="cc-item-meta">'+(v.message_count||0)+' msgs &middot; '+ago(v.captured_at)+lineage+'</div></div><button class="cc-go" data-id="'+esc(id)+'">Go</button></div>';}).join('');
   list.querySelectorAll('.cc-go').forEach(function(b){b.onclick=function(ev){ev.stopPropagation();
-    if(window.__ccSpine){window.__ccSpine.open(b.dataset.id,panel);}
-    else{continueChat(b.dataset.id,b);}};});
+    if(continueMode==='key'){continueChat(b.dataset.id,b,true);}
+    else if(window.__ccSpine){window.__ccSpine.open(b.dataset.id,panel);}
+    else{continueChat(b.dataset.id,b,false);}};});
   /* hook for keys.js - render tags + long-press multi-select */
   list.querySelectorAll('.cc-item').forEach(function(el){
-    if(window.__ccRenderItemHook)window.__ccRenderItemHook(el,el.dataset.id);});}
+    if(window.__ccRenderItemHook)window.__ccRenderItemHook(el,el.dataset.id,byId[el.dataset.id]);});
+  if(!q&&window.__ccKeys&&window.__ccKeys.renderProjects)window.__ccKeys.renderProjects(document.getElementById('cc-projects'),allRows);}
+/* expose for spine.js / keys.js */
+window.__ccRefreshList=async function(){await loadRows();renderList();};
 /* expose for spine.js */
 window.__ccToast=toast;window.__ccClosePanel=closePanel;window.__ccReopenList=function(){renderList();var s=panel.querySelector('.cc-search-wrap');if(s)s.style.display='';var l=document.getElementById('cc-fab-list');if(l)l.style.display='';};
 
 /* ── Continue logic ──────────────────────────────── */
-async function continueChat(chatId,btn){
+async function continueChat(chatId,btn,useKey){
   btn.disabled=true;btn.textContent='...';
   /* disable all other go buttons */
   panel.querySelectorAll('.cc-go').forEach(function(b){b.disabled=true;});
   try{
-    var r=await send('continue_chat',{chatId:chatId});
+    var r=useKey?await send('continue_with_key',{chatIds:[chatId]}):await send('continue_chat',{chatId:chatId});
     if(!r||!r.ok)throw new Error((r&&r.error)||'failed');
     var how=await continueWithText(r.text);
     btn.textContent='✓';btn.classList.add('cc-ok');
@@ -156,8 +168,8 @@ async function updateRing(){var m=location.pathname.match(CHAT_RE);
 /* ── Event wiring ────────────────────────────────── */
 fab.addEventListener('click',function(){if(!moved)togglePanel();});
 
-/* close on outside click */
-document.addEventListener('click',function(e){if(panelOpen&&!panel.contains(e.target)&&e.target!==fab)closePanel();});
+/* close on outside click - path is fixed at dispatch, so clicks on controls that re-render themselves still count as inside */
+document.addEventListener('click',function(e){var path=e.composedPath();if(panelOpen&&path.indexOf(panel)===-1&&path.indexOf(fab)===-1)closePanel();});
 
 /* close on Escape */
 document.addEventListener('keydown',function(e){
