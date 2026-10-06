@@ -4,6 +4,9 @@
 # Dependencies
 node_modules/
 
+# Private planning notes
+_0/
+
 # Env / local secrets
 .env
 .env.*
@@ -21,3 +24,4 @@ npm-debug.log*
 # IDE
 .idea/
 .vscode/
+_0/
