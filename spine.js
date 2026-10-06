@@ -1,8 +1,7 @@
 (function(){'use strict';
 /* Timeline Spine - injected as content script alongside fab.js */
-/* Requires fab.js to be loaded first (uses its send, toast, injectText, waitForComposer) */
+/* Requires fab.js to be loaded first (uses window.__ccToast, __ccContinue, __ccClosePanel) */
 
-var CHAT_RE=/\/chat\/([0-9a-f-]{36})/;
 var _spineData=null,_from=0,_to=0,_chatId=null;
 
 window.__ccSpine={
@@ -100,19 +99,10 @@ function renderSpine(panelEl){
       r.data.messages.forEach(function(m,i){parts.push((m.role==='human'?'**Human:**':'**Assistant:**')+'\n'+m.text+'\n');});
       parts.push('---\nResume from here. You have partial context ('+selCount+' of '+msgs.length+' messages). Ask if you need earlier context.');
       var text=parts.join('\n');
-      var onNew=location.pathname==='/new'||!location.pathname.match(CHAT_RE);
-      if(!onNew){
-        /* close everything before navigating - scripts re-inject on new page */
-        closeSpine();var p=document.getElementById('cc-fab-panel');if(p)p.classList.remove('cc-open');
-        window.location.href='https://claude.ai/new';await waitForComposerLocal();}
-      await injectTextLocal(text);
+      var how=await window.__ccContinue(text);
       btn.textContent='Done';
-      if(window.__ccToast)window.__ccToast('Loaded into composer');
-      setTimeout(function(){
-        closeSpine();
-        var panel=document.getElementById('cc-fab-panel');
-        if(panel)panel.classList.remove('cc-open');
-      },600);
+      if(how==='injected'&&window.__ccToast)window.__ccToast('Loaded into composer');
+      setTimeout(function(){if(window.__ccClosePanel)window.__ccClosePanel();},600);
     }catch(e){
       btn.textContent='Error';
       if(window.__ccToast)window.__ccToast('Error: '+e.message.slice(0,30));
@@ -235,22 +225,6 @@ function setupDrag(view,msgs){
     }
   });
 }
-
-/* local copies to avoid dependency on fab.js variable scope */
-function waitForComposerLocal(){return new Promise(function(resolve){
-  var attempts=0;var check=function(){
-    var el=document.querySelector('[contenteditable="true"].ProseMirror')||document.querySelector('[contenteditable="true"][data-placeholder]')||document.querySelector('[role="textbox"][contenteditable="true"]');
-    if(el||++attempts>=15){resolve();return;}setTimeout(check,200);};setTimeout(check,300);});}
-
-async function injectTextLocal(text){
-  var el=document.querySelector('[contenteditable="true"].ProseMirror')||document.querySelector('[contenteditable="true"][data-placeholder]')||document.querySelector('[role="textbox"][contenteditable="true"]');
-  if(!el){await navigator.clipboard.writeText(text);if(window.__ccToast)window.__ccToast('Copied - paste with Cmd+V');return;}
-  el.focus({preventScroll:true});await new Promise(function(r){setTimeout(r,80);});
-  var dt=new DataTransfer();dt.setData('text/plain',text);
-  el.dispatchEvent(new ClipboardEvent('paste',{clipboardData:dt,bubbles:true,cancelable:true}));
-  el.dispatchEvent(new InputEvent('input',{bubbles:true}));
-  await new Promise(function(r){setTimeout(r,150);});
-  if(!el.textContent.trim())document.execCommand('insertText',false,text);}
 
 function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 

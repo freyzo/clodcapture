@@ -85,7 +85,7 @@ function renderList(){var list=document.getElementById('cc-fab-list');
   list.querySelectorAll('.cc-item').forEach(function(el){
     if(window.__ccRenderItemHook)window.__ccRenderItemHook(el,el.dataset.id);});}
 /* expose for spine.js */
-window.__ccToast=toast;window.__ccReopenList=function(){renderList();var s=panel.querySelector('.cc-search-wrap');if(s)s.style.display='';var l=document.getElementById('cc-fab-list');if(l)l.style.display='';};
+window.__ccToast=toast;window.__ccClosePanel=closePanel;window.__ccReopenList=function(){renderList();var s=panel.querySelector('.cc-search-wrap');if(s)s.style.display='';var l=document.getElementById('cc-fab-list');if(l)l.style.display='';};
 
 /* ── Continue logic ──────────────────────────────── */
 async function continueChat(chatId,btn){
@@ -95,14 +95,9 @@ async function continueChat(chatId,btn){
   try{
     var r=await send('continue_chat',{chatId:chatId});
     if(!r||!r.ok)throw new Error((r&&r.error)||'failed');
-    /* navigate to /new if not already there */
-    var onNew=location.pathname==='/new'||!location.pathname.match(CHAT_RE);
-    if(!onNew){window.location.href='https://claude.ai/new';
-      await waitForComposer();
-    }
-    await injectText(r.text);
+    var how=await continueWithText(r.text);
     btn.textContent='✓';btn.classList.add('cc-ok');
-    toast('Loaded into composer');
+    if(how==='injected')toast('Loaded into composer');
     setTimeout(closePanel,600);
   }catch(e){
     btn.textContent='!';btn.classList.add('cc-err');
@@ -110,13 +105,34 @@ async function continueChat(chatId,btn){
     setTimeout(function(){btn.textContent='Go';btn.classList.remove('cc-err');},1500);
   }finally{panel.querySelectorAll('.cc-go').forEach(function(b){b.disabled=false;});}}
 
-function waitForComposer(){return new Promise(function(resolve){
-  var attempts=0,max=15;
+function waitForComposer(maxMs){return new Promise(function(resolve){
+  var deadline=Date.now()+(maxMs||3000);
   var check=function(){var el=document.querySelector('[contenteditable="true"].ProseMirror')||document.querySelector('[contenteditable="true"][data-placeholder]')||document.querySelector('[role="textbox"][contenteditable="true"]');
     if(el){resolve();return;}
-    if(++attempts>=max){resolve();return;}/* give up, will try anyway */
+    if(Date.now()>=deadline){resolve();return;}/* give up, will try anyway */
     setTimeout(check,200);};
   setTimeout(check,300);});}
+
+/* ── Continue handoff ────────────────────────────── */
+/* location.href to /new reloads the page and kills this script, so the text rides across in storage */
+var PENDING_KEY='_pending_inject',PENDING_TTL_MS=120000;
+async function continueWithText(text){
+  var onNew=location.pathname==='/new'||!location.pathname.match(CHAT_RE);
+  if(onNew){await injectText(text);return 'injected';}
+  await chrome.storage.local.set({[PENDING_KEY]:{text:text,ts:Date.now()}});
+  window.location.href='https://claude.ai/new';
+  return 'navigating';}
+
+async function consumePendingInject(){
+  if(location.pathname!=='/new')return;
+  var p=(await chrome.storage.local.get(PENDING_KEY))[PENDING_KEY];
+  if(!p)return;
+  await chrome.storage.local.remove(PENDING_KEY);
+  if(!p.text||Date.now()-p.ts>PENDING_TTL_MS)return;
+  await waitForComposer(15000);
+  await injectText(p.text);
+  toast('Loaded into composer');}
+window.__ccContinue=continueWithText;
 
 async function injectText(text){
   var el=document.querySelector('[contenteditable="true"].ProseMirror')||document.querySelector('[contenteditable="true"][data-placeholder]')||document.querySelector('[role="textbox"][contenteditable="true"]');
@@ -165,6 +181,7 @@ updateVisibility();
 
 /* initial ring update */
 updateRing();
+consumePendingInject().catch(function(e){toast('Error: '+e.message.slice(0,40));});
 /* refresh ring periodically */
 setInterval(updateRing,30000);
 

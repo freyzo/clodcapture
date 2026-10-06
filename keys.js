@@ -81,20 +81,13 @@ async function continueWithKeys(){
   try{
     var r=await new Promise(function(res){chrome.runtime.sendMessage({type:'continue_with_key',chatIds:ids},res);});
     if(!r||!r.ok)throw new Error(r?r.error:'failed');
-    var onNew=location.pathname==='/new'||!/\/chat\//.test(location.pathname);
-    if(!onNew){window.location.href='https://claude.ai/new';
-      await new Promise(function(resolve){var a=0;var c=function(){var el=document.querySelector('[contenteditable="true"].ProseMirror')||document.querySelector('[contenteditable="true"][data-placeholder]');if(el||++a>=15){resolve();return;}setTimeout(c,200);};setTimeout(c,300);});}
-    /* inject */
-    var el=document.querySelector('[contenteditable="true"].ProseMirror')||document.querySelector('[contenteditable="true"][data-placeholder]')||document.querySelector('[role="textbox"][contenteditable="true"]');
-    if(el){el.focus({preventScroll:true});await new Promise(function(r2){setTimeout(r2,80);});
-      var dt=new DataTransfer();dt.setData('text/plain',r.text);
-      el.dispatchEvent(new ClipboardEvent('paste',{clipboardData:dt,bubbles:true,cancelable:true}));
-      el.dispatchEvent(new InputEvent('input',{bubbles:true}));
-    }else{await navigator.clipboard.writeText(r.text);}
-    if(window.__ccToast)window.__ccToast('Loaded '+r.key_count+' key'+(r.key_count>1?'s':'')+' into composer');
+    var how=await window.__ccContinue(r.text);
+    if(how==='injected'&&window.__ccToast)window.__ccToast('Loaded '+r.key_count+' key'+(r.key_count>1?'s':'')+' into composer');
     /* reset */
     var ms=window.__ccKeys.multiSelect;if(ms){ms.ids.clear();ms.active=false;}
-    var panel=document.getElementById('cc-fab-panel');if(panel)panel.classList.remove('cc-open');
+    updateSelectUI();
+    if(btn)btn.disabled=false;
+    if(window.__ccClosePanel)window.__ccClosePanel();
   }catch(e){
     if(window.__ccToast)window.__ccToast('Error: '+e.message.slice(0,30));
     if(btn){btn.textContent='Go with keys';btn.disabled=false;}
