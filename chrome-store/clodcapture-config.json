@@ -4,12 +4,11 @@
     "purpose": "Pre-filled Chrome Web Store submission config for clodcapture v2.5.1",
     "based_on": "Chrome Extension Config.json template"
   },
-
   "cws_store_listing": {
     "product_details": {
       "title": "clodcapture",
       "summary": "Save, export, and continue AI chat sessions across conversations with auto-capture and version history.",
-      "description": "clodcapture automatically captures your AI chat sessions as you browse, storing them locally with unlimited storage. Features include:\n\nAuto-capture: Sessions are saved automatically as you navigate between chats. No manual steps required.\n\nFloating spider button: A draggable button on the chat page opens your recent chats; one click continues any of them in a new chat. Toggle with Cmd/Ctrl+Shift+K.\n\nTimeline spine: Pick exactly which messages to carry over with a vertical scrubber - quick ranges (last 10, since the last break), zoom, live token estimate, and the opening messages always kept for context.\n\nPortable chat keys: Each chat gets a compact summary card with tags. Combine up to five chats into one new session, edit tags, group related chats into projects, and export/import keys between browsers.\n\nSession links: Chats you continue are linked to the chat they came from.\n\nOne-click export: Download any captured session as JSON, or bulk-export everything as a zip.\n\nGitHub backup: Optionally push captured sessions to your own GitHub repository.\n\nContext usage gauge: See how much of the context window the current conversation uses.\n\nOptional API key: Connect your own API key for AI-written session digests, summary keys and exact token counts.\n\nCaptured data is stored in your browser. Nothing is sent anywhere unless you turn on GitHub backup or add an API key. No accounts, no tracking.",
+      "description": "clodcapture automatically captures your AI chat sessions as you browse, storing them locally with unlimited storage. Features include:\n\nAuto-capture: Sessions are saved automatically as you navigate between chats. No manual steps required.\n\nFloating spider button: A draggable button on the chat page opens your recent chats; one click continues any of them in a new chat. Toggle with Cmd/Ctrl+Shift+K.\n\nTimeline spine: Pick exactly which messages to carry over with a vertical scrubber - quick ranges (last 10, since the last break), zoom, live token estimate, and the opening messages always kept for context.\n\nPortable chat keys: Each chat gets a compact summary card with tags. Combine up to five chats into one new session, edit tags, group related chats into projects, and export/import keys between browsers.\n\nSession links: Chats you continue are linked to the chat they came from.\n\nOne-click export: Download any captured session as JSON, or bulk-export everything as a zip.\n\nImport and undo: Restore chats from your export zips or saved JSON files, and undo a delete or tag removal with one click.\n\nFits in: Follows claude.ai's light or dark appearance and respects Reduce Motion.\n\nGitHub backup: Optionally push captured sessions to your own GitHub repository.\n\nContext usage gauge: See how much of the context window the current conversation uses.\n\nOptional API key: Connect your own API key for AI-written session digests, summary keys and exact token counts.\n\nCaptured data is stored in your browser. Nothing is sent anywhere unless you turn on GitHub backup or add an API key. No accounts, no tracking.",
       "category": "Developer Tools",
       "language": "English (United States)"
     },
@@ -24,7 +23,6 @@
       "support_url": "https://github.com/freyzo/clodcapture/issues"
     }
   },
-
   "cws_privacy": {
     "single_purpose": "Captures and exports AI chat sessions for local backup and cross-session continuity.",
     "permission_justifications": {
@@ -61,13 +59,11 @@
     },
     "privacy_policy_url": "https://clodcapture-privacy.vercel.app/"
   },
-
   "cws_distribution": {
     "payment_model": "Free of charge",
     "visibility": "Public",
     "regions": "All regions"
   },
-
   "cws_test_instructions": {
     "additional_instructions": "1. Install the extension.\n2. Open a chat on the supported platform - it is captured automatically.\n3. Open the extension popup - the current chat title appears and the captured chats list fills in.\n4. Click 'Copy JSON' to copy the session, 'Save File' to download it, 'Export All' to download every chat as a zip.\n5. Click the arrow on any captured chat to continue it in a new chat.\n6. On the chat page, click the floating spider (or press Cmd/Ctrl+Shift+K) to open the panel; 'Go' opens the timeline spine (Full mode) or continues from the chat's key (Key mode).\n7. Long-press two chats in the panel and click 'Go with 2 keys' to combine them.\n8. Open Settings (gear icon) to configure the optional API key, GitHub backup, and key export/import."
   }

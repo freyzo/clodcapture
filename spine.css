@@ -59,3 +59,18 @@
 .cc-spine-go:hover{transform:scale(1.03);box-shadow:0 6px 24px rgba(217,119,87,0.35),inset 0 1px 0 rgba(255,255,255,0.35),inset 0 -1px 0 rgba(0,0,0,0.06)}
 .cc-spine-go:active{transform:scale(0.97);border-radius:14px;transition:transform .1s}
 .cc-spine-go:disabled{opacity:0.4;cursor:default;transform:none}
+
+/* light appearance */
+.cc-light .cc-spine-title{color:#1f1e1d}
+.cc-light .cc-spine-back{color:rgba(0,0,0,0.45)}
+.cc-light .cc-spine-bar{background:rgba(0,0,0,0.08)}
+.cc-light .cc-spine-handle{border-color:#fff}
+.cc-light .cc-spine-msg.human{color:rgba(0,0,0,0.7);background:rgba(217,119,87,0.07)}
+.cc-light .cc-spine-msg.assistant{color:#5b45b8;background:rgba(155,120,248,0.08)}
+.cc-light .cc-spine-msg:hover{background:rgba(0,0,0,0.05)}
+.cc-light .cc-spine-range{color:rgba(0,0,0,0.5)}
+.cc-light .cc-spine-tokens{color:#15803d}
+.cc-light .cc-spine-tokens.amber{color:#b45309}
+.cc-light .cc-spine-tokens.red{color:#dc2626}
+.cc-light .cc-spine-tokens.cc-exact,.cc-light .cc-spine-exact{color:#0e7490}
+.cc-light .cc-spine-chip{border-color:rgba(0,0,0,0.1);background:rgba(0,0,0,0.03);color:rgba(0,0,0,0.55)}

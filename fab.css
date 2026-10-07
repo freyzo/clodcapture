@@ -1,7 +1,7 @@
 /* clodcapture FAB - all classes prefixed cc- to avoid claude.ai conflicts */
 
 /* jelly FAB - soft physics, glass-gel depth */
-#cc-fab{position:fixed;z-index:2147483646;width:72px;height:72px;border-radius:50%;background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;border:none;cursor:grab;display:flex;align-items:center;justify-content:center;box-shadow:none;filter:drop-shadow(0 4px 12px rgba(184,90,58,0.35)) drop-shadow(0 1px 3px rgba(0,0,0,0.25));transition:transform .4s cubic-bezier(.34,1.8,.64,1),filter .3s;user-select:none;-webkit-user-select:none;touch-action:none;animation:cc-breathe 3s ease-in-out infinite}
+#cc-fab{position:fixed;z-index:2147483646;width:72px;height:72px;border-radius:50%;background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;border:none;cursor:grab;display:flex;align-items:center;justify-content:center;box-shadow:none;filter:drop-shadow(0 4px 12px rgba(184,90,58,0.35)) drop-shadow(0 1px 3px rgba(0,0,0,0.25));transition:transform .4s cubic-bezier(.34,1.8,.64,1),filter .3s;user-select:none;-webkit-user-select:none;touch-action:none;animation:cc-breathe 3s ease-in-out 3}
 #cc-fab::before{display:none}
 #cc-fab:hover{transform:scale(1.15);filter:drop-shadow(0 6px 20px rgba(217,119,87,0.5)) drop-shadow(0 2px 6px rgba(0,0,0,0.25));animation:none}
 #cc-fab:active,#cc-fab.cc-dragging{cursor:grabbing;transform:scale(.88) rotate(-3deg);animation:none;transition:transform .12s cubic-bezier(.2,.6,.35,1)}
@@ -84,6 +84,29 @@
 /* toast */
 #cc-toast{position:fixed;z-index:2147483647;left:50%;transform:translateX(-50%);bottom:80px;padding:8px 16px;border-radius:8px;background:rgba(30,26,38,0.95);border:1px solid rgba(255,255,255,0.06);color:rgba(255,240,230,0.7);font-size:11px;font-weight:600;font-family:-apple-system,BlinkMacSystemFont,sans-serif;pointer-events:none;opacity:0;transition:opacity .2s}
 #cc-toast.cc-show{opacity:1}
+#cc-toast.cc-act{pointer-events:auto;display:flex;align-items:center;gap:10px}
+.cc-toast-act{padding:3px 10px;border-radius:6px;border:1px solid rgba(217,119,87,0.4);background:rgba(217,119,87,0.12);color:#D97757;font-size:11px;font-weight:700;font-family:inherit;cursor:pointer}
+.cc-toast-act:hover{background:rgba(217,119,87,0.22)}
+
+/* light appearance - follows claude.ai's own theme */
+#cc-fab-panel.cc-light{background:rgba(255,255,255,0.98);border-color:rgba(0,0,0,0.08);box-shadow:0 12px 40px rgba(0,0,0,0.14),inset 0 1px 0 rgba(255,255,255,0.6)}
+.cc-light #cc-fab-search{background:rgba(0,0,0,0.03);border-color:rgba(0,0,0,0.1);color:#1f1e1d}
+.cc-light #cc-fab-search::placeholder,.cc-light .cc-search-wrap svg{color:rgba(0,0,0,0.38)}
+.cc-light .cc-mode-lbl,.cc-light .cc-empty,.cc-light .cc-multi-count{color:rgba(0,0,0,0.5)}
+.cc-light .cc-mode-btn{border-color:rgba(0,0,0,0.12);color:rgba(0,0,0,0.55)}
+.cc-light .cc-mode-btn.cc-on{border-color:#c4623f;color:#b5532f;background:rgba(217,119,87,0.1)}
+.cc-light .cc-item{background:rgba(0,0,0,0.02);border-color:rgba(0,0,0,0.06)}
+.cc-light .cc-item:hover{background:rgba(217,119,87,0.07);border-color:rgba(217,119,87,0.25)}
+.cc-light .cc-item-name{color:#1f1e1d}
+.cc-light .cc-item-meta{color:rgba(0,0,0,0.5)}
+.cc-light .cc-lineage{color:#6b4fd8}
+.cc-light .cc-tag{opacity:0.85}
+.cc-light .cc-tag-add,.cc-light .cc-tag-more{border-color:rgba(0,0,0,0.2)!important;color:rgba(0,0,0,0.45)!important}
+.cc-light .cc-tag-input{background:#fff;color:#1f1e1d}
+.cc-light .cc-project{border-color:rgba(107,79,216,0.35);background:rgba(107,79,216,0.06);color:#6b4fd8}
+.cc-light .cc-multibar{border-top-color:rgba(0,0,0,0.06)}
+.cc-light .cc-multi-clear{border-color:rgba(0,0,0,0.12);color:rgba(0,0,0,0.5)}
+#cc-toast.cc-light{background:rgba(255,255,255,0.98);border-color:rgba(0,0,0,0.08);color:#1f1e1d;box-shadow:0 6px 24px rgba(0,0,0,0.12)}
 
 @keyframes cc-pop{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
-@media(prefers-reduced-motion:reduce){#cc-fab,#cc-fab-panel,.cc-go{transition:none}@keyframes cc-pop{from{opacity:1}to{opacity:1}}}
+@media(prefers-reduced-motion:reduce){#cc-fab,#cc-fab *,#cc-fab-panel,#cc-fab-panel *,#cc-toast{animation:none!important;transition:none!important}#cc-fab:hover,#cc-fab:active,#cc-fab.cc-dragging{transform:none}}

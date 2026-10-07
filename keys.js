@@ -26,7 +26,8 @@ function renderTags(tags,container,chatId){
     pill.title='Filter: #'+tag;
     var label=document.createElement('span');label.textContent=tag;pill.appendChild(label);
     if(chatId){var x=document.createElement('span');x.className='cc-tag-x';x.textContent='\u00d7';x.title='Remove tag';
-      x.onclick=function(e){e.stopPropagation();editTags(chatId,{remove:[tag]});};pill.appendChild(x);}
+      x.onclick=function(e){e.stopPropagation();editTags(chatId,{remove:[tag]}).then(function(ok){
+        if(ok&&window.__ccToast)window.__ccToast('Removed #'+tag,{label:'Undo',run:function(){editTags(chatId,{add:[tag]});}});});};pill.appendChild(x);}
     pill.onclick=function(e){e.stopPropagation();
       var search=document.getElementById('cc-fab-search');
       if(search){search.value='#'+tag;search.dispatchEvent(new Event('input'));}};
@@ -50,8 +51,9 @@ function renderTags(tags,container,chatId){
 
 async function editTags(chatId,change){
   var r=await new Promise(function(res){chrome.runtime.sendMessage(Object.assign({type:'set_tags',chatId:chatId},change),res);});
-  if(!r||!r.ok){if(window.__ccToast)window.__ccToast('Tag edit failed');return;}
+  if(!r||!r.ok){if(window.__ccToast)window.__ccToast('Tag edit failed');return false;}
   if(window.__ccRefreshList)window.__ccRefreshList();
+  return true;
 }
 
 /* projects: chats sharing >= PROJECT_MIN_SHARED tags, or linked by continue lineage */

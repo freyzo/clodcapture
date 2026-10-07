@@ -45,8 +45,10 @@
 | Select a range to continue | Use the timeline spine to pick specific messages |
 | Combine multiple chats | Long-press to multi-select, continue with stacked keys |
 | Continue a whole project | Click a project chip in the panel, then **Go with keys** |
-| Organize chats | Edit tags in the panel (**+** to add, **×** to remove), search with `#tag` |
-| Move keys to another browser | Settings → **Export keys** / **Import keys** |
+| Organize chats | Edit tags in the panel (**+** to add, **×** to remove, with **Undo**), search with `#tag` |
+| Delete a chat | Click **×** in the popup list - it goes right away, with **Undo** for a few seconds |
+| Restore chats / move to another browser | Settings → **Import…** - pick Export All zips, saved `.json` files and/or a keys file (several at once) |
+| Move keys to another browser | Settings → **Export keys**, then **Import…** on the other side |
 | Push to GitHub | Configure repo in Settings, click **Push All** |
 | See context usage | Check the gauge in the popup footer or the FAB ring |
 
@@ -98,6 +100,8 @@ Resume a saved thread in a new chat:
 
 A draggable jelly spider button injected directly onto claude.ai. Click to open a mini-panel with your recent captured chats. One click to continue any session in a new chat. Toggle with **Cmd+Shift+K**.
 
+The panel and toasts follow claude.ai's own light/dark appearance (the popup follows the system). With **Reduce Motion** on, the FAB, panel, spine and popup stop animating and the spider is drawn still. Otherwise animations rest after a few seconds, and hidden tabs do no polling.
+
 The panel's **Go uses** switch picks how **Go** continues: **Full** opens the timeline spine; **Key** continues straight from the chat's summary key. Chats you continued show where they came from (`↳ parent chat`).
 
 ### Timeline Spine
@@ -125,7 +129,7 @@ manifest.json            MV3 service_worker + content_scripts on claude.ai
   +-- spine.js           timeline scrubber, range selection, partial continue
   +-- keys.js            portable keys, tag editing, projects, multi-select
   +-- fab.css + spine.css styles for FAB, panel, spine, tags, liquid buttons
-  +-- popup.html/js      popup UI, settings, key export/import, full chat list
+  +-- popup.html/js      popup UI, settings, import (zip/json/keys), undo, full chat list
   +-- spider.js          3D spider canvas animation (click = bounce)
 ```
 
@@ -156,7 +160,7 @@ Zero runtime dependencies. ~1000 lines across 7 JS files.
 | **API key** | Enables exact token counting, automatic summary keys, and AI-powered session digests via clawd-continue |
 | **GitHub repo** | `owner/repo` for backup. Push captured sessions as versioned JSON files |
 | **Auto-push** | Automatically push to GitHub on every capture |
-| **Portable keys** | Export every chat key as one JSON file, or import keys from another browser |
+| **Backup & Restore** | **Export keys** saves every chat key as one JSON file. **Import…** restores chats from Export All zips or saved `.json` files and keys from a keys file. A newer local copy is never overwritten |
 
 All settings stored locally in `chrome.storage.local`. No data leaves your machine unless you configure GitHub backup or an API key (chat text is then sent to `api.anthropic.com` for digests, keys and token counts).
 

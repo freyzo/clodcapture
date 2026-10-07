@@ -1,4 +1,4 @@
-(function(){var c=document.getElementById('spider-canvas');if(!c)return;var x=c.getContext('2d'),W=336,H=100,CX=168,CY=50;c.width=W*2;c.height=H*2;x.scale(2,2);var sx=0,sy=0,vx=0,vy=0,pulse=0,run=false;var wA=[];for(var i=0;i<10;i++)wA.push(i/10*Math.PI*2);var glowT=0;function draw(){glowT+=0.02;x.clearRect(0,0,W,H);
+(function(){var c=document.getElementById('spider-canvas');if(!c)return;var x=c.getContext('2d'),W=336,H=100,CX=168,CY=50;c.width=W*2;c.height=H*2;x.scale(2,2);var sx=0,sy=0,vx=0,vy=0,pulse=0,run=false;var wA=[];for(var i=0;i<10;i++)wA.push(i/10*Math.PI*2);var glowT=0;var CRISP=window.matchMedia('(prefers-color-scheme: light)').matches?'120,60,30':'255,240,230';function draw(){glowT+=0.02;x.clearRect(0,0,W,H);
 
 /* --- WEB GLOW LAYER --- */
 var glowPulse=0.5+0.5*Math.sin(glowT*1.2);
@@ -18,7 +18,7 @@ x.lineWidth=1.0;
 x.stroke();
 /* crisp overlay */
 x.shadowBlur=0;
-x.strokeStyle='rgba(255,240,230,'+(0.08+np*0.15+glowPulse*0.04).toFixed(3)+')';
+x.strokeStyle='rgba('+CRISP+','+(0.08+np*0.15+glowPulse*0.04).toFixed(3)+')';
 x.lineWidth=0.6;
 x.stroke();
 x.restore();
@@ -38,7 +38,7 @@ x.lineWidth=1.2;
 x.stroke();
 /* crisp overlay */
 x.shadowBlur=0;
-x.strokeStyle='rgba(255,240,230,'+(0.07+rp*0.15+glowPulse*0.03).toFixed(3)+')';
+x.strokeStyle='rgba('+CRISP+','+(0.07+rp*0.15+glowPulse*0.03).toFixed(3)+')';
 x.lineWidth=0.55;
 x.stroke();
 x.restore();
@@ -116,15 +116,17 @@ function tick(){vx=(vx+(-0.12*sx))*0.82;vy=(vy+(-0.12*sy))*0.82;sx+=vx;sy+=vy;pu
 if(Math.abs(sx)>0.1||Math.abs(sy)>0.1||Math.abs(vx)>0.05||pulse>0.005){animId=requestAnimationFrame(tick);}
 else{sx=0;sy=0;vx=0;vy=0;pulse=0;draw();run=false;}}
 
-/* ambient glow animation loop - pauses when popup hidden */
-var ambientId=null;
-function ambientTick(){draw();ambientId=requestAnimationFrame(ambientTick);}
-function startAmbient(){if(!ambientId)ambientTick();}
+/* ambient glow runs briefly (open / hover / re-show), then rests; static under Reduce Motion */
+var REDUCE=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+var ambientId=null,ambientUntil=0;
+function ambientTick(){if(run||Date.now()>ambientUntil){ambientId=null;return;}draw();ambientId=requestAnimationFrame(ambientTick);}
+function startAmbient(ms){if(REDUCE){draw();return;}ambientUntil=Math.max(ambientUntil,Date.now()+ms);if(!ambientId)ambientId=requestAnimationFrame(ambientTick);}
 function stopAmbient(){if(ambientId){cancelAnimationFrame(ambientId);ambientId=null;}}
-document.addEventListener('visibilitychange',function(){document.hidden?stopAmbient():startAmbient();});
-startAmbient();
+document.addEventListener('visibilitychange',function(){document.hidden?stopAmbient():startAmbient(3000);});
+c.addEventListener('mouseenter',function(){startAmbient(3000);});
+startAmbient(4000);
 
-c.addEventListener('click',function(e){var r=c.getBoundingClientRect(),s=W/r.width;
+c.addEventListener('click',function(e){if(REDUCE)return;var r=c.getBoundingClientRect(),s=W/r.width;
 var mx=(e.clientX-r.left)*s-CX,my=(e.clientY-r.top)*s-CY;
 var d=Math.sqrt(mx*mx+my*my)||1,f=12+Math.random()*10;
 vx+=(-mx/d)*f*(0.5+Math.random()*0.7);vy+=(-my/d)*f*(0.5+Math.random()*0.7);pulse=1;

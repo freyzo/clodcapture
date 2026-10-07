@@ -13,7 +13,24 @@ function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace
 /* ── Toast ───────────────────────────────────────── */
 var toastEl=document.createElement('div');toastEl.id='cc-toast';document.body.appendChild(toastEl);
 var _toastTimer=null;
-function toast(msg){clearTimeout(_toastTimer);toastEl.textContent=msg;toastEl.classList.add('cc-show');_toastTimer=setTimeout(function(){toastEl.classList.remove('cc-show');},2500);}
+function toast(msg,action){clearTimeout(_toastTimer);applyTheme();toastEl.textContent=msg;
+  if(action){var b=document.createElement('button');b.className='cc-toast-act';b.textContent=action.label;
+    b.onclick=function(e){e.stopPropagation();clearTimeout(_toastTimer);toastEl.classList.remove('cc-show','cc-act');action.run();};toastEl.appendChild(b);}
+  toastEl.classList.toggle('cc-act',!!action);toastEl.classList.add('cc-show');
+  _toastTimer=setTimeout(function(){toastEl.classList.remove('cc-show','cc-act');},action?6000:2500);}
+
+/* ── Appearance ──────────────────────────────────── */
+/* follow claude.ai's own appearance setting, which can differ from the OS */
+function pageIsLight(){
+  var root=document.documentElement;
+  if(root.classList.contains('dark')||root.dataset.mode==='dark')return false;
+  if(root.classList.contains('light')||root.dataset.mode==='light')return true;
+  var els=[document.body,root];
+  for(var i=0;i<els.length;i++){var c=els[i]&&getComputedStyle(els[i]).backgroundColor;
+    var m=c&&c.match(/rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?/);
+    if(m&&(m[4]===undefined||+m[4]>0.5))return(0.2126*m[1]+0.7152*m[2]+0.0722*m[3])/255>0.5;}
+  return window.matchMedia('(prefers-color-scheme: light)').matches;}
+function applyTheme(){var light=pageIsLight();toastEl.classList.toggle('cc-light',light);if(typeof panel!=='undefined'&&panel)panel.classList.toggle('cc-light',light);}
 
 /* ── FAB button ──────────────────────────────────── */
 var fab=document.createElement('button');fab.id='cc-fab';
@@ -68,7 +85,7 @@ function togglePanel(){if(panelOpen){closePanel();}else{openPanel();}}
 async function loadRows(){var idx=await send('get_index');
   allRows=Object.entries(idx||{}).sort(function(a,b){return new Date(b[1].captured_at)-new Date(a[1].captured_at);});}
 
-async function openPanel(){panelOpen=true;positionPanel();panel.classList.add('cc-open');
+async function openPanel(){panelOpen=true;applyTheme();positionPanel();panel.classList.add('cc-open');
   await loadRows();
   renderList();document.getElementById('cc-fab-search').value='';searchTerm='';
   document.getElementById('cc-fab-search').focus();}
@@ -162,6 +179,7 @@ async function injectText(text){
 
 /* ── Context sweep (color drain on spider) ───────── */
 async function updateRing(){if(!alive()){teardown();return;}
+  if(document.hidden)return;
   var m=location.pathname.match(CHAT_RE);
   var sm=fab.querySelector('#ccSM');
   if(!m){if(sm)sm.setAttribute('width','0');return;}
@@ -174,12 +192,13 @@ async function updateRing(){if(!alive()){teardown();return;}
 fab.addEventListener('click',function(){if(!moved)togglePanel();});
 
 /* close on outside click - path is fixed at dispatch, so clicks on controls that re-render themselves still count as inside */
-function onDocClick(e){var path=e.composedPath();if(panelOpen&&path.indexOf(panel)===-1&&path.indexOf(fab)===-1)closePanel();}
+function onDocClick(e){var path=e.composedPath();if(panelOpen&&path.indexOf(panel)===-1&&path.indexOf(fab)===-1&&path.indexOf(toastEl)===-1)closePanel();}
 /* Escape closes; Cmd/Ctrl+Shift+K toggles */
 function onDocKey(e){
   if(e.key==='Escape'&&panelOpen){closePanel();e.stopPropagation();}
   if(e.key==='K'&&e.shiftKey&&(e.metaKey||e.ctrlKey)){e.preventDefault();togglePanel();}}
-function onVisibility(){if(!document.hidden&&!alive())teardown();}
+/* hidden tabs do no ring work; catch up when shown */
+function onVisibility(){if(document.hidden)return;if(!alive())teardown();else updateRing();}
 document.addEventListener('click',onDocClick);
 document.addEventListener('keydown',onDocKey);
 document.addEventListener('visibilitychange',onVisibility);

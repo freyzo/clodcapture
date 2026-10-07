@@ -193,6 +193,43 @@
 
     @keyframes ping { 0%{transform:scale(.7);opacity:.8} 100%{transform:scale(2.5);opacity:0} }
     @keyframes su   { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+    .sep { height:1px; background:rgba(255,255,255,0.04); margin:4px 0; }
+    .auto-lbl { font-size:10px; font-weight:600; color:rgba(255,240,230,0.3); display:flex; align-items:center; gap:5px; cursor:pointer; }
+    .undo-bar { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:7px 10px; border-radius:10px; background:rgba(217,119,87,0.08); border:1px solid rgba(217,119,87,0.2); font-size:10.5px; font-weight:600; color:rgba(255,240,230,0.75); }
+    .undo-bar[hidden] { display:none; }
+    .undo-bar span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .undo-btn { flex-shrink:0; padding:3px 10px; border-radius:6px; border:1px solid rgba(217,119,87,0.4); background:rgba(217,119,87,0.14); color:#D97757; font-size:10.5px; font-weight:700; font-family:inherit; cursor:pointer; }
+
+    /* light appearance follows the system setting (the popup is browser chrome) */
+    @media (prefers-color-scheme: light) {
+      body, .shell { background:linear-gradient(160deg,#fbf8f5,#f3efea); }
+      .shell { box-shadow:0 8px 32px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.8); }
+      .logo-name { color:#1f1e1d; }
+      .gear-btn { color:rgba(0,0,0,0.35); }
+      .card, .settings-panel { background:rgba(255,255,255,0.75); border-color:rgba(0,0,0,0.07); }
+      .lbl, .settings-lbl, .list-title, .ctx-label { color:rgba(0,0,0,0.45); }
+      .val { color:rgba(0,0,0,0.75); }
+      .val.dim, .foot-size { color:rgba(0,0,0,0.4); }
+      .api-input, .search-input { background:#fff; border-color:rgba(0,0,0,0.12); color:#1f1e1d; }
+      .api-input::placeholder, .search-input::placeholder, .search-icon { color:rgba(0,0,0,0.35); }
+      .api-status, .auto-lbl, .status, .ctx-tokens { color:rgba(0,0,0,0.5); }
+      .api-status.ok { color:#15803d; }
+      .api-status.err { color:#dc2626; }
+      .btn { background:rgba(255,255,255,0.8); border-color:rgba(0,0,0,0.09); color:rgba(0,0,0,0.75); }
+      .btn:hover { background:rgba(217,119,87,0.08); border-color:rgba(217,119,87,0.3); }
+      .divider, .sep { border-top-color:rgba(0,0,0,0.07); background:rgba(0,0,0,0.07); }
+      .chat-item { background:rgba(255,255,255,0.7); border-color:rgba(0,0,0,0.06); }
+      .chat-name { color:#1f1e1d; }
+      .chat-meta, .empty-list { color:rgba(0,0,0,0.45); }
+      .chat-btn { color:rgba(0,0,0,0.35); }
+      .dot, .sync-dot.dim { background:rgba(0,0,0,0.12); }
+      .prog-label { color:#b5532f; }
+      .undo-bar { color:rgba(0,0,0,0.75); background:rgba(217,119,87,0.08); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation:none !important; transition:none !important; }
+    }
   </style>
 </head>
 <body>
@@ -234,7 +271,7 @@
           <button class="api-save" id="api-save">Save</button>
         </div>
         <div class="api-status" id="api-status">Enables exact token counting</div>
-        <div style="height:1px; background:rgba(255,255,255,0.04); margin:4px 0;"></div>
+        <div class="sep"></div>
         <div class="settings-lbl">GitHub Backup</div>
         <div class="api-row">
           <input class="api-input" id="gh-repo-input" type="text" placeholder="owner/repo" autocomplete="off" spellcheck="false" style="font-family:inherit;">
@@ -244,7 +281,7 @@
           <button class="api-save" id="gh-save">Save</button>
         </div>
         <div class="api-row" style="gap:8px;">
-          <label style="font-size:10px; font-weight:600; color:rgba(255,240,230,0.3); display:flex; align-items:center; gap:5px; cursor:pointer;">
+          <label class="auto-lbl">
             <input type="checkbox" id="gh-auto" style="accent-color:#D97757;"> Auto-push on capture
           </label>
         </div>
@@ -253,14 +290,14 @@
           <span class="icon"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v3.5a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8"/><polyline points="4,5 7,2 10,5"/><line x1="7" y1="2" x2="7" y2="10"/></svg></span>
           <span>Push All to GitHub</span>
         </button>
-        <div style="height:1px; background:rgba(255,255,255,0.04); margin:4px 0;"></div>
-        <div class="settings-lbl">Portable Keys</div>
+        <div class="sep"></div>
+        <div class="settings-lbl">Backup &amp; Restore</div>
         <div class="btn-row">
           <button class="btn" id="btn-keys-export" style="padding:7px 8px; font-size:10px; animation:none;" title="Download every chat key as one JSON file">Export keys</button>
-          <button class="btn" id="btn-keys-import" style="padding:7px 8px; font-size:10px; animation:none;" title="Load keys exported from another browser">Import keys</button>
+          <button class="btn" id="btn-keys-import" style="padding:7px 8px; font-size:10px; animation:none;" title="Restore chats from Export All zips or saved .json files, and keys from a keys export">Import&hellip;</button>
         </div>
-        <input type="file" id="keys-file" accept="application/json,.json" style="display:none;">
-        <div class="api-status" id="keys-status">Move chat summaries + tags between browsers</div>
+        <input type="file" id="keys-file" accept=".json,.zip,application/json,application/zip" multiple style="display:none;">
+        <div class="api-status" id="keys-status">Restore chats (.zip / .json) or keys from another browser</div>
       </div>
 
       <div class="btn-row">
@@ -285,6 +322,8 @@
         <div class="dw"><div class="dot" id="dot"></div><div class="dot-ring"></div></div>
         <span id="status-msg">-</span>
       </div>
+
+      <div class="undo-bar" id="undo-bar" hidden><span id="undo-msg"></span><button class="undo-btn" id="undo-btn">Undo</button></div>
 
       <div class="foot-row">
         <span class="foot-size" id="foot-size"></span>
