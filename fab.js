@@ -2,7 +2,9 @@
 if(document.getElementById('cc-fab'))return;
 var CHAT_RE=/\/chat\/([0-9a-f-]{36})/;
 var SHOW_RE=/^https:\/\/claude\.ai\/(chat|new)/;
-var send=function(t,d){return new Promise(function(r){chrome.runtime.sendMessage(Object.assign({type:t},d||{}),r);});};
+function alive(){try{return!!(chrome.runtime&&chrome.runtime.id);}catch(e){return false;}}
+/* sendMessage throws once the extension context is invalidated (update/reload) */
+var send=function(t,d){return new Promise(function(r){try{chrome.runtime.sendMessage(Object.assign({type:t},d||{}),r);}catch(e){teardown();r(undefined);}});};
 
 /* ── Helpers ─────────────────────────────────────── */
 function ago(iso){if(!iso)return'';var m=Math.floor((Date.now()-new Date(iso))/60000);if(m<1)return'now';if(m<60)return m+'m';var h=Math.floor(m/60);return h<24?h+'h':Math.floor(h/24)+'d';}
@@ -35,14 +37,16 @@ var dragging=false,dragStart={x:0,y:0},fabStart={x:0,y:0},moved=false;
 fab.addEventListener('mousedown',function(e){if(e.button!==0)return;dragging=true;moved=false;
   var r=fab.getBoundingClientRect();fabStart={x:r.left,y:r.top};dragStart={x:e.clientX,y:e.clientY};
   fab.classList.add('cc-dragging');e.preventDefault();});
-document.addEventListener('mousemove',function(e){if(!dragging)return;
+document.addEventListener('mousemove',onDragMove);
+document.addEventListener('mouseup',onDragEnd);
+function onDragMove(e){if(!dragging)return;
   var dx=e.clientX-dragStart.x,dy=e.clientY-dragStart.y;
   if(Math.abs(dx)>3||Math.abs(dy)>3)moved=true;
   var nx=Math.max(0,Math.min(window.innerWidth-72,fabStart.x+dx));
   var ny=Math.max(0,Math.min(window.innerHeight-72,fabStart.y+dy));
-  fab.style.left=nx+'px';fab.style.top=ny+'px';fab.style.right='auto';fab.style.bottom='auto';});
-document.addEventListener('mouseup',function(){if(!dragging)return;dragging=false;fab.classList.remove('cc-dragging');
-  if(moved){var r=fab.getBoundingClientRect();pos={x:r.left,y:r.top};chrome.storage.local.set({_fab_pos:pos});}});
+  fab.style.left=nx+'px';fab.style.top=ny+'px';fab.style.right='auto';fab.style.bottom='auto';}
+function onDragEnd(){if(!dragging)return;dragging=false;fab.classList.remove('cc-dragging');
+  if(moved){var r=fab.getBoundingClientRect();pos={x:r.left,y:r.top};chrome.storage.local.set({_fab_pos:pos});}}
 
 /* ── Panel ───────────────────────────────────────── */
 var panel=document.createElement('div');panel.id='cc-fab-panel';
@@ -157,7 +161,8 @@ async function injectText(text){
   if(!el.textContent.trim())document.execCommand('insertText',false,text);}
 
 /* ── Context sweep (color drain on spider) ───────── */
-async function updateRing(){var m=location.pathname.match(CHAT_RE);
+async function updateRing(){if(!alive()){teardown();return;}
+  var m=location.pathname.match(CHAT_RE);
   var sm=fab.querySelector('#ccSM');
   if(!m){if(sm)sm.setAttribute('width','0');return;}
   var ctx=await send('get_context_usage',{chatId:m[1]});
@@ -169,23 +174,24 @@ async function updateRing(){var m=location.pathname.match(CHAT_RE);
 fab.addEventListener('click',function(){if(!moved)togglePanel();});
 
 /* close on outside click - path is fixed at dispatch, so clicks on controls that re-render themselves still count as inside */
-document.addEventListener('click',function(e){var path=e.composedPath();if(panelOpen&&path.indexOf(panel)===-1&&path.indexOf(fab)===-1)closePanel();});
-
-/* close on Escape */
-document.addEventListener('keydown',function(e){
+function onDocClick(e){var path=e.composedPath();if(panelOpen&&path.indexOf(panel)===-1&&path.indexOf(fab)===-1)closePanel();}
+/* Escape closes; Cmd/Ctrl+Shift+K toggles */
+function onDocKey(e){
   if(e.key==='Escape'&&panelOpen){closePanel();e.stopPropagation();}
-  /* Cmd/Ctrl+Shift+K toggle */
-  if(e.key==='K'&&e.shiftKey&&(e.metaKey||e.ctrlKey)){e.preventDefault();togglePanel();}
-});
+  if(e.key==='K'&&e.shiftKey&&(e.metaKey||e.ctrlKey)){e.preventDefault();togglePanel();}}
+function onVisibility(){if(!document.hidden&&!alive())teardown();}
+document.addEventListener('click',onDocClick);
+document.addEventListener('keydown',onDocKey);
+document.addEventListener('visibilitychange',onVisibility);
 
 /* search */
 document.getElementById('cc-fab-search').addEventListener('input',function(){searchTerm=this.value.trim();renderList();});
 
-/* close on navigation */
-var _origPush=history.pushState,_origReplace=history.replaceState;
-history.pushState=function(){_origPush.apply(this,arguments);closePanel();updateVisibility();updateRing();};
-history.replaceState=function(){_origReplace.apply(this,arguments);closePanel();updateVisibility();updateRing();};
-window.addEventListener('popstate',function(){closePanel();updateVisibility();updateRing();});
+/* claude.ai's own history.pushState can't be wrapped from a content script (isolated world); Navigation API events are shared */
+var nav=window.navigation,navPoll=null,lastPath=location.pathname,lastHref=location.href;
+function onNav(){if(location.pathname!==lastPath){lastPath=location.pathname;closePanel();}updateVisibility();updateRing();}
+if(nav&&nav.addEventListener)nav.addEventListener('currententrychange',onNav);
+else navPoll=setInterval(function(){if(location.href!==lastHref){lastHref=location.href;onNav();}},1000);
 
 /* visibility: only show on chat/new pages */
 function updateVisibility(){var show=SHOW_RE.test(location.href);fab.style.display=show?'flex':'none';}
@@ -195,6 +201,17 @@ updateVisibility();
 updateRing();
 consumePendingInject().catch(function(e){toast('Error: '+e.message.slice(0,40));});
 /* refresh ring periodically */
-setInterval(updateRing,30000);
+var ringTimer=setInterval(updateRing,30000);
+
+/* after an extension update/reload this script is orphaned (chrome.* calls throw): remove everything it added */
+function teardown(){
+  clearInterval(ringTimer);if(navPoll)clearInterval(navPoll);clearTimeout(_toastTimer);
+  if(nav&&nav.removeEventListener)nav.removeEventListener('currententrychange',onNav);
+  document.removeEventListener('mousemove',onDragMove);document.removeEventListener('mouseup',onDragEnd);
+  document.removeEventListener('click',onDocClick);document.removeEventListener('keydown',onDocKey);
+  document.removeEventListener('visibilitychange',onVisibility);
+  [fab,panel,toastEl].forEach(function(el){el.remove();});
+  ['__ccContinue','__ccToast','__ccClosePanel','__ccReopenList','__ccRefreshList','__ccSpine','__ccKeys','__ccRenderItemHook'].forEach(function(k){delete window[k];});
+}
 
 })();

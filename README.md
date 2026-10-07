@@ -38,7 +38,7 @@
 | Auto-capture a chat | Just visit it - clodcapture captures on navigation |
 | Copy session to clipboard | Click **Copy** in popup |
 | Download raw JSON | Click **Grab** |
-| Export everything | Click **Sync All** - zips to `Downloads/clodcapture/` |
+| Export everything | Click **Export All** - zips to `Downloads/clodcapture/` (split into ~64 MB parts for large libraries) |
 | Resume in a new chat | Click the continue button on any captured chat |
 | Quick continue (FAB) | Click the floating spider button on claude.ai |
 | Continue from a summary instead of the full chat | Switch the panel to **Key** mode, then **Go** |
@@ -74,7 +74,7 @@
 
 ### Capture pipeline
 
-1. Content script patches `history.pushState` / `replaceState` and listens for `popstate`. Switching chats triggers a capture via the service worker.
+1. Content script listens for claude.ai's in-app navigation (Navigation API `currententrychange`) and tab URL changes. Switching chats triggers a capture via the service worker.
 2. Uses your existing claude.ai session cookies to call the conversation API. No API key required for saving.
 3. Raw JSON stored in **IndexedDB** (`brainjar`). Metadata indexed in `chrome.storage.local` for fast popup rendering.
 4. Background alarm checks every **30 minutes** and re-downloads only chats whose `updated_at` changed.

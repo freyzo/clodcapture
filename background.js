@@ -15,17 +15,22 @@ let _idxCache=null;
 function getIndex(){if(!_idxCache)_idxCache=chrome.storage.local.get("_index").then(d=>d._index||{}).catch(e=>{_idxCache=null;throw e;});return _idxCache;}
 async function putIndex(chatId,meta){const idx=await getIndex();const prev=idx[chatId];if(prev)['tags','parents','children'].forEach(function(f){if(prev[f]&&!meta[f])meta[f]=prev[f];});idx[chatId]=meta;await chrome.storage.local.set({_index:idx});updateBadge(Object.keys(idx).length);}
 async function removeIndex(chatId){const idx=await getIndex();delete idx[chatId];await chrome.storage.local.set({_index:idx});updateBadge(Object.keys(idx).length);}
+/* drop every trace of a chat so deleting chats leaves nothing behind */
+async function forgetChat(chatId){await dbDelete(chatId);await removeIndex(chatId);await chrome.storage.local.remove(['_key_'+chatId,'_tags_'+chatId,'_spine_range_'+chatId]);delete _ctxCache[chatId];const idx=await getIndex();let touched=false;for(const m of Object.values(idx)){for(const f of['parents','children']){if(m[f]&&m[f].indexOf(chatId)!==-1){m[f]=m[f].filter(x=>x!==chatId);if(!m[f].length)delete m[f];touched=true;}}}if(touched)await chrome.storage.local.set({_index:idx});}
 function updateBadge(n){chrome.action.setBadgeText({text:n>0?String(n):""});chrome.action.setBadgeBackgroundColor({color:"#9B78F8"});}
 function slug(s){return(s||"untitled").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,50);}
-async function dl(content,filename,type){const b64=btoa(unescape(encodeURIComponent(content)));return new Promise((res,rej)=>{chrome.downloads.download({url:"data:"+type+";base64,"+b64,filename:filename,saveAs:false,conflictAction:"overwrite"},id=>{chrome.runtime.lastError?rej(new Error(chrome.runtime.lastError.message)):res(id);});});}
-async function dlBlob(blob,filename){const buf=await blob.arrayBuffer();const bytes=new Uint8Array(buf);let bin='';for(let i=0;i<bytes.length;i++)bin+=String.fromCharCode(bytes[i]);const b64=btoa(bin);const url="data:application/zip;base64,"+b64;return new Promise((res,rej)=>{chrome.downloads.download({url:url,filename:filename,saveAs:false,conflictAction:"overwrite"},id=>{chrome.runtime.lastError?rej(new Error(chrome.runtime.lastError.message)):res(id);});});}
-function buildZip(files){/* Minimal ZIP builder for text files (STORE, no compression) */
-function str2buf(s){return new TextEncoder().encode(s);}
+/* base64 in 3-byte-aligned chunks joined once - never builds a second full-size binary string */
+function b64FromBytes(bytes,prefix){var parts=[prefix||''],CH=0x8000*3;for(var i=0;i<bytes.length;i+=CH){var sub=bytes.subarray(i,i+CH),s='';for(var j=0;j<sub.length;j+=0x8000)s+=String.fromCharCode.apply(null,sub.subarray(j,j+0x8000));parts.push(btoa(s));}return parts.join('');}
+function dlBytes(bytes,filename,type){const url=b64FromBytes(bytes,"data:"+type+";base64,");return new Promise((res,rej)=>{chrome.downloads.download({url:url,filename:filename,saveAs:false,conflictAction:"overwrite"},id=>{chrome.runtime.lastError?rej(new Error(chrome.runtime.lastError.message)):res(id);});});}
+async function dl(content,filename,type){return dlBytes(new TextEncoder().encode(content),filename,type);}
+const CRC_TABLE=(function(){var t=new Uint32Array(256);for(var n=0;n<256;n++){var c=n;for(var k=0;k<8;k++)c=c&1?0xedb88320^(c>>>1):c>>>1;t[n]=c>>>0;}return t;})();
+function crc32(buf){var c=0xffffffff;for(var i=0;i<buf.length;i++)c=CRC_TABLE[(c^buf[i])&0xff]^(c>>>8);return(c^0xffffffff)>>>0;}
 function u16(n){return[n&0xff,(n>>8)&0xff];}
 function u32(n){return[n&0xff,(n>>8)&0xff,(n>>16)&0xff,(n>>24)&0xff];}
-function crc32(buf){let c=0xffffffff;for(let i=0;i<buf.length;i++){c^=buf[i];for(let j=0;j<8;j++)c=(c>>>1)^(c&1?0xedb88320:0);}return(c^0xffffffff)>>>0;}
+function buildZip(files){/* Minimal ZIP builder (STORE, no compression) -> Uint8Array */
+const enc=new TextEncoder();
 const entries=[];let offset=0;const parts=[];
-for(const{name,data}of files){const nameBuf=str2buf(name);const dataBuf=typeof data==="string"?str2buf(data):data;const crc=crc32(dataBuf);const local=new Uint8Array([
+for(const{name,data}of files){const nameBuf=enc.encode(name);const dataBuf=typeof data==="string"?enc.encode(data):data;const crc=crc32(dataBuf);const local=new Uint8Array([
 0x50,0x4b,0x03,0x04,0x14,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 ...u32(crc),...u32(dataBuf.length),...u32(dataBuf.length),
 ...u16(nameBuf.length),0x00,0x00]);
@@ -49,10 +54,10 @@ parts.push(eocd);
 let total=0;for(const p of parts)total+=p.length;
 const out=new Uint8Array(total);let pos=0;
 for(const p of parts){out.set(p,pos);pos+=p.length;}
-return new Blob([out],{type:"application/zip"});}
+return out;}
 function distill(raw){const data=typeof raw==="string"?JSON.parse(raw):raw;const msgs=(data.chat_messages||[]).flatMap(msg=>{const role=msg.sender==="human"?"human":"assistant";const text=(msg.content||[]).filter(c=>c.type==="text"&&(c.text||"").trim()).map(c=>c.text.trim()).join("\n\n");return text?[{role,text}]:[];});return{title:data.name||"session",created_at:data.created_at,messages:msgs};}
 async function getGitHubConfig(){const c=await chrome.storage.local.get(["ghToken","ghRepo","ghAutoSync"]);if(!c.ghToken||!c.ghRepo)return null;var parts=c.ghRepo.split("/");if(parts.length!==2)return null;if(/[^a-zA-Z0-9._-]/.test(parts[0])||/[^a-zA-Z0-9._-]/.test(parts[1]))return null;return{token:c.ghToken,owner:parts[0],repo:parts[1],auto:!!c.ghAutoSync};}
-async function ghPush(chatId,raw,meta){const gh=await getGitHubConfig();if(!gh)return;const path="chats/"+slug(meta.name)+"-"+chatId.slice(0,8)+".json";const b64=btoa(unescape(encodeURIComponent(raw)));const headers={"Authorization":"Bearer "+gh.token,"Content-Type":"application/json","Accept":"application/vnd.github+json"};const url="https://api.github.com/repos/"+gh.owner+"/"+gh.repo+"/contents/"+path;var sha=null;try{var existing=await fetch(url,{headers:headers});if(existing.ok){var data=await existing.json();sha=data.sha;}}catch(e){}
+async function ghPush(chatId,raw,meta){const gh=await getGitHubConfig();if(!gh)return;const path="chats/"+slug(meta.name)+"-"+chatId.slice(0,8)+".json";const b64=b64FromBytes(new TextEncoder().encode(raw));const headers={"Authorization":"Bearer "+gh.token,"Content-Type":"application/json","Accept":"application/vnd.github+json"};const url="https://api.github.com/repos/"+gh.owner+"/"+gh.repo+"/contents/"+path;var sha=null;try{var existing=await fetch(url,{headers:headers});if(existing.ok){var data=await existing.json();sha=data.sha;}}catch(e){}
 var body={message:"update "+(meta.name||"chat")+" ("+(meta.message_count||0)+" msgs)",content:b64};if(sha)body.sha=sha;var resp=await fetch(url,{method:"PUT",headers:headers,body:JSON.stringify(body)});if(!resp.ok){var err=await resp.json().catch(function(){return{};});throw new Error((err.message)||"GitHub "+resp.status);}
 return{pushed:true,path:path};}
 async function ghPushAll(){const gh=await getGitHubConfig();if(!gh)throw new Error("GitHub not configured");const idx=await getIndex();var pushed=0,errors=0;for(const[id,meta]of Object.entries(idx)){const raw=await dbGet(id);if(!raw)continue;try{await ghPush(id,raw,meta);pushed++;}
@@ -62,10 +67,13 @@ return{pushed:pushed,errors:errors,total:Object.keys(idx).length};}
 async function capture(chatId,force,opts){const wasNew=!(await getIndex())[chatId];const r=await captureOnce(chatId,force);if(opts&&opts.auto){if(wasNew&&r&&r.status==="captured")linkLineage(chatId).catch(e=>console.error("lineage:",e.message));maybeAutoKey(chatId).catch(e=>console.error("keygen:",e.message));}return r;}
 async function captureOnce(chatId,force){const idx=await getIndex();if(!force&&idx[chatId]){const age=Date.now()-new Date(idx[chatId].captured_at).getTime();if(age<30000)return{status:"fresh"};}
 const raw=await fetchRaw(chatId);const data=JSON.parse(raw);if(!force&&idx[chatId]&&idx[chatId].updated_at===data.updated_at)return{status:"fresh"};await dbPut(chatId,raw);var meta={name:data.name||"Untitled",updated_at:data.updated_at,created_at:data.created_at,message_count:data.chat_messages?data.chat_messages.length:0,captured_at:new Date().toISOString(),};await putIndex(chatId,meta);var gh=await getGitHubConfig();if(gh&&gh.auto)ghPush(chatId,raw,meta).catch(function(e){console.error("gh_push:",e.message);});return{status:"captured",name:data.name,messages:data.chat_messages?data.chat_messages.length:0};}
-async function sync(){/* Export everything already captured as a single zip. Background alarm keeps data fresh. */
-const idx=await getIndex();const ids=Object.keys(idx);let exported=0;const files=[];for(const id of ids){const raw=await dbGet(id);if(!raw)continue;const meta=idx[id];files.push({name:slug(meta.name)+"-"+id.slice(0,8)+".json",data:raw});exported++;}
-if(files.length>0){const zip=buildZip(files);const date=new Date().toISOString().slice(0,10);await dlBlob(zip,SYNC_DIR+"/clodcapture-sync-"+date+".zip");}
-await chrome.storage.local.set({_last_sync:new Date().toISOString()});return{captured:ids.length,exported:exported,total:ids.length,errors:0};}
+var ZIP_PART_MAX=64*1024*1024,ZIP_PART_FILES=60000;
+async function sync(){/* Export everything as zip part(s); capping each part keeps memory bounded for any library size */
+const idx=await getIndex();const ids=Object.keys(idx);const date=new Date().toISOString().slice(0,10);const enc=new TextEncoder();let exported=0,partNo=0,files=[],bytes=0;
+async function flush(last){if(!files.length)return;partNo++;const zip=buildZip(files);files=[];bytes=0;await dlBytes(zip,SYNC_DIR+"/clodcapture-sync-"+date+(last&&partNo===1?"":"-part"+partNo)+".zip","application/zip");}
+for(const id of ids){const raw=await dbGet(id);if(!raw)continue;const data=enc.encode(raw);if(files.length&&(bytes+data.length>ZIP_PART_MAX||files.length>=ZIP_PART_FILES))await flush(false);files.push({name:slug(idx[id].name)+"-"+id.slice(0,8)+".json",data:data});bytes+=data.length;exported++;}
+await flush(true);
+await chrome.storage.local.set({_last_sync:new Date().toISOString()});return{captured:ids.length,exported:exported,total:ids.length,parts:partNo,errors:0};}
 async function grab(chatId){const raw=await fetchRaw(chatId);const data=JSON.parse(raw);const date=new Date().toISOString().slice(0,10);await dl(raw,slug(data.name)+"-"+date+".json","application/json");return{status:"grabbed",name:data.name,messages:data.chat_messages?data.chat_messages.length:0};}
 async function getDistilled(chatId){const raw=await dbGet(chatId);if(!raw)throw new Error("not_found");return distill(raw);}
 function anthropicHeaders(k){return{'Content-Type':'application/json','x-api-key':k,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'};}
@@ -122,7 +130,7 @@ if(msg.type==="continue_chat"){(async()=>{try{var d=await getDistilled(msg.chatI
 reply({ok:true,text:text,method:apiKey?'api':'fallback'});}catch(e){reply({ok:false,error:e.message});}})();return true;}
 if(msg.type==="gh_push_all"){if(!isPopup(sender)){reply({error:"denied"});return true;}ghPushAll().then(reply).catch(e=>reply({error:e.message}));return true;}
 if(msg.type==="gh_validate"){if(!isPopup(sender)){reply({error:"denied"});return true;}(async()=>{try{var r=await fetch("https://api.github.com/repos/"+encodeURI(msg.repo),{headers:{"Authorization":"Bearer "+msg.token,"Accept":"application/vnd.github+json"}});if(!r.ok)throw new Error(""+r.status);var data=await r.json();reply({ok:true,name:data.full_name,private:data.private});}catch(e){reply({ok:false,error:e.message});}})();return true;}
-if(msg.type==="remove"){if(!isPopup(sender)){reply({error:"denied"});return true;}(async()=>{await dbDelete(msg.chatId);await removeIndex(msg.chatId);reply({ok:true});})();return true;}
+if(msg.type==="remove"){if(!isPopup(sender)){reply({error:"denied"});return true;}(async()=>{await forgetChat(msg.chatId);reply({ok:true});})();return true;}
 if(msg.type==="clear"){if(!isPopup(sender)){reply({error:"denied"});return true;}(async()=>{await dbClear();_idxCache=null;const keysToKeep=["apiKey","ghToken","ghRepo","ghAutoSync"];const all=await chrome.storage.local.get(null);const toRemove=Object.keys(all).filter(k=>keysToKeep.indexOf(k)===-1);if(toRemove.length)await chrome.storage.local.remove(toRemove);updateBadge(0);_ctxCache={};reply({ok:true});})();return true;}
 /* recount only when the chat or API-key state changes: the FAB polls every 30s */
 if(msg.type==="get_context_usage"){(async()=>{var meta=(await getIndex())[msg.chatId];var apiKey=(await chrome.storage.local.get("apiKey")).apiKey;var ck=meta?meta.updated_at+'|'+(apiKey?1:0):null;var c=_ctxCache[msg.chatId];if(ck&&c&&c.key===ck){reply(c.res);return;}var raw=await dbGet(msg.chatId);if(!raw){reply({pct:0,tokens:0,exact:false,window:CONTEXT_WINDOW});return;}var res=null;
