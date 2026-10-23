@@ -5,7 +5,7 @@
 <h1 align="center">clodcapture</h1>
 
 <p align="center">
-  <em>Auto-save, export, and continue Claude.ai chats. All local, no accounts.</em>
+  <em>Export your Claude chat data from claude.ai</em>
 </p>
 
 <p align="center">
