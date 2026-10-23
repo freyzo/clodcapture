@@ -264,48 +264,15 @@
         </div>
       </div>
 
-      <div class="settings-panel" id="settings-panel">
-        <div class="settings-lbl">AI Provider API Key</div>
-        <div class="api-row">
-          <input class="api-input" id="api-key-input" type="password" placeholder="api-key..." autocomplete="off" spellcheck="false">
-          <button class="api-save" id="api-save">Save</button>
-        </div>
-        <div class="api-status" id="api-status">Enables exact token counting</div>
-        <div class="sep"></div>
-        <div class="settings-lbl">GitHub Backup</div>
-        <div class="api-row">
-          <input class="api-input" id="gh-repo-input" type="text" placeholder="owner/repo" autocomplete="off" spellcheck="false" style="font-family:inherit;">
-        </div>
-        <div class="api-row">
-          <input class="api-input" id="gh-token-input" type="password" placeholder="ghp_..." autocomplete="off" spellcheck="false">
-          <button class="api-save" id="gh-save">Save</button>
-        </div>
-        <div class="api-row" style="gap:8px;">
-          <label class="auto-lbl">
-            <input type="checkbox" id="gh-auto" style="accent-color:#D97757;"> Auto-push on capture
-          </label>
-        </div>
-        <div class="api-status" id="gh-status">Push captured chats to a GitHub repo</div>
-        <button class="btn" id="btn-gh-push" style="padding:7px 8px; font-size:10px; animation:none;">
-          <span class="icon"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v3.5a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8"/><polyline points="4,5 7,2 10,5"/><line x1="7" y1="2" x2="7" y2="10"/></svg></span>
-          <span>Push All to GitHub</span>
-        </button>
-        <div class="sep"></div>
-        <div class="settings-lbl">Backup &amp; Restore</div>
-        <div class="btn-row">
-          <button class="btn" id="btn-keys-export" style="padding:7px 8px; font-size:10px; animation:none;" title="Download every chat key as one JSON file">Export keys</button>
-          <button class="btn" id="btn-keys-import" style="padding:7px 8px; font-size:10px; animation:none;" title="Restore chats from Export All zips or saved .json files, and keys from a keys export">Import&hellip;</button>
-        </div>
-        <input type="file" id="keys-file" accept=".json,.zip,application/json,application/zip" multiple style="display:none;">
-        <div class="api-status" id="keys-status">Restore chats (.zip / .json) or keys from another browser</div>
-      </div>
-
       <div class="btn-row">
         <button class="btn b1" id="btn-copy"></button>
         <button class="btn b2" id="btn-grab"></button>
       </div>
-      <button class="btn btn-full b3" id="btn-capture-all"></button>
-      <button class="btn btn-full" id="btn-sync" style="animation-delay:.20s;"></button>
+
+      <div class="settings-panel" id="settings-panel">
+        <button class="btn btn-full" id="btn-capture-all" style="animation:none;"></button>
+        <button class="btn btn-full" id="btn-sync" style="animation:none;"></button>
+      </div>
 
       <hr class="divider">
 

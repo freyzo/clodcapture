@@ -26,15 +26,13 @@ It runs in the background while you use Claude. Chats are captured automatically
 
 - **Auto-capture** - just visit a chat and it's saved. Background sync every 30 min catches anything you missed.
 - **Sync All** - one click to pull every conversation from your account on demand.
-- **Continue in new chat** - resume any saved session. With an API key, you get an intelligence report instead of a raw dump.
+- **Continue in new chat** - resume any saved session with an AI-generated digest.
 - **Timeline spine** - pick exactly which messages to carry forward with a visual scrubber.
 - **Portable keys** - compact AI-generated summaries (~500 tokens each). Stack up to 5 into one new chat.
 - **Export** - copy JSON, download individual files, or bulk-export everything as a zip.
-- **Context gauge** - see how much of the 200k window you've used (exact count with API key, estimate without).
+- **Context gauge** - see how much of the 200k window you've used.
 - **Floating spider button** - a draggable FAB on claude.ai for quick access to recent chats. Toggle with Cmd+Shift+K.
 - **Tags and projects** - auto-generated tags, editable, searchable with `#tag`. Related chats group into projects.
-- **GitHub backup** - push captured sessions to your own repo automatically.
-- **Import/restore** - move chats and keys between browsers with zip/json import.
 - **Light/dark mode** - follows claude.ai's appearance. Respects Reduce Motion.
 
 <p align="center">
@@ -53,7 +51,7 @@ From source:
 
 ## Optional setup
 
-An API key (Settings in the popup) unlocks exact token counts, AI-written session summaries, and smarter continue digests. GitHub backup pushes every capture to a repo of your choice. Both are optional - the extension works fine without either.
+An API key unlocks exact token counts and smarter continue digests. Set it in background.js or via the extension's storage. Optional - everything works without it.
 
 ---
 
