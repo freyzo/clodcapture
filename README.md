@@ -31,7 +31,6 @@ It runs in the background while you use Claude. Chats are captured automatically
 - **Portable keys** - compact AI-generated summaries (~500 tokens each). Stack up to 5 into one new chat.
 - **Export** - copy JSON, download individual files, or bulk-export everything as a zip.
 - **Context gauge** - see how much of the 200k window you've used.
-- **Floating spider button** - a draggable FAB on claude.ai for quick access to recent chats. Toggle with Cmd+Shift+K.
 - **Tags and projects** - auto-generated tags, editable, searchable with `#tag`. Related chats group into projects.
 - **Light/dark mode** - follows claude.ai's appearance. Respects Reduce Motion.
 
