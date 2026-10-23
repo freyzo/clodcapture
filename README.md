@@ -36,7 +36,9 @@ It runs in the background while you use Claude. Chats are captured automatically
 - **Light/dark mode** - follows claude.ai's appearance. Respects Reduce Motion.
 
 <p align="center">
-  <img src="assets/extension-UI/newUI.jpg" alt="clodcapture UI" width="720" />
+  <img src="assets/ui.png" alt="clodcapture popup" width="340" />
+  &nbsp;&nbsp;
+  <img src="assets/ui2.png" alt="clodcapture settings expanded" width="340" />
 </p>
 
 ## Install
