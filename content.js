@@ -17,4 +17,6 @@ function onPoll(){if(location.href!==lastHref){lastHref=location.href;checkNav()
 if(nav&&nav.addEventListener)nav.addEventListener('currententrychange',checkNav);else poll=setInterval(onPoll,1000);
 document.addEventListener('visibilitychange',onVisible);
 function teardown(){if(nav&&nav.removeEventListener)nav.removeEventListener('currententrychange',checkNav);if(poll)clearInterval(poll);document.removeEventListener('visibilitychange',onVisible);window.__ccNavInit=false;}
-checkNav();})();
+/* popup.js stores _pending_inject and opens /new; claim it once, then retry until the composer renders */
+function consumePending(){if(location.pathname!=='/new'||!alive())return;try{chrome.storage.local.get('_pending_inject',function(r){var p=r&&r._pending_inject;if(!p)return;chrome.storage.local.remove('_pending_inject');if(!p.text||Date.now()-(p.ts||0)>120000)return;var tries=0;(function attempt(){loadIntoComposer(p.text).catch(function(){if(++tries<40)setTimeout(attempt,250);});})();});}catch(e){}}
+consumePending();checkNav();})();
